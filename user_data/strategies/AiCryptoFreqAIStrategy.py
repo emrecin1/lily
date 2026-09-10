@@ -25,11 +25,13 @@ V1'den farklar (bilincli):
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 from pandas import DataFrame
 
+from freqtrade.persistence import Trade
 from freqtrade.strategy import DecimalParameter, IStrategy, RealParameter
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -76,6 +78,13 @@ class AiCryptoFreqAIStrategy(IStrategy):
                                          space="sell", optimize=True)
     time_stop_loss = DecimalParameter(-0.12, -0.02, default=-0.05, decimals=2,
                                       space="sell", optimize=True)
+
+    # Gunluk kayip limiti (V1 RiskManager MAX_DAILY_LOSS ~%1.5). Bugun (UTC)
+    # realize kayip baslangic sermayesinin bu oranini asarsa yeni giris yok.
+    # Freqtrade "protections" (StoplossGuard/MaxDrawdown) mum bazli; bu
+    # takvim-gunu bazli, stratejiden bagimsiz bir sert kapi. .env / config ile
+    # override edilebilir olsun diye sabit (hyperopt'a acmiyoruz).
+    max_daily_loss_pct: float = 0.02
 
     order_types = {
         "entry": "limit",
@@ -160,6 +169,50 @@ class AiCryptoFreqAIStrategy(IStrategy):
         dataframe["ema20"] = feats["ema20"].to_numpy()
         dataframe["ema50"] = feats["ema50"].to_numpy()
         return dataframe
+
+    # ------------------------------------------------------------------ #
+    # Gunluk kayip kapisi
+    # ------------------------------------------------------------------ #
+
+    def _starting_capital(self) -> float:
+        """Backtest'te dry_run_wallet; canlida ilk bakiyeye en iyi tahmin."""
+        w = self.config.get("dry_run_wallet")
+        if w:
+            return float(w)
+        try:
+            return float(self.wallets.get_total_stake_amount())  # yaklasik
+        except Exception:  # noqa: BLE001
+            return float(self.config.get("stake_amount", 1000)) * max(
+                int(self.config.get("max_open_trades", 1)), 1
+            )
+
+    def _today_realized_pnl(self, now: datetime) -> float:
+        """Bugun (UTC) kapanan trade'lerin toplam realize PnL'i (mutlak)."""
+        today = now.astimezone(timezone.utc).date()
+        total = 0.0
+        try:
+            closed = Trade.get_trades_proxy(is_open=False)
+        except Exception:  # noqa: BLE001
+            return 0.0
+        for t in closed:
+            cd = getattr(t, "close_date", None)
+            if cd is None:
+                continue
+            if cd.tzinfo is None:
+                cd = cd.replace(tzinfo=timezone.utc)
+            if cd.astimezone(timezone.utc).date() == today:
+                total += float(t.close_profit_abs or 0.0)
+        return total
+
+    def confirm_trade_entry(
+        self, pair: str, order_type: str, amount: float, rate: float,
+        time_in_force: str, current_time: datetime, entry_tag, side: str, **kwargs
+    ) -> bool:
+        limit = -abs(self.max_daily_loss_pct) * self._starting_capital()
+        day_pnl = self._today_realized_pnl(current_time)
+        if day_pnl <= limit:
+            return False  # gunluk kayip limiti — bugun yeni giris yok
+        return True
 
     def custom_exit(
         self, pair: str, trade, current_time, current_rate: float,

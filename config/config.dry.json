@@ -63,13 +63,27 @@
         "enabled": false,
         "//": "Aktif etmek icin: enabled=true, token ve chat_id'yi .env'den al veya buraya yaz (bu dosya git'te!).",
         "token": "",
-        "chat_id": ""
+        "chat_id": "",
+        "notification_settings": {
+            "status": "on",
+            "warning": "on",
+            "startup": "on",
+            "entry": "on",
+            "entry_fill": "on",
+            "exit": "on",
+            "exit_fill": "on",
+            "entry_cancel": "on",
+            "exit_cancel": "on",
+            "protection_trigger": "on",
+            "protection_trigger_global": "on",
+            "strategy_msg": "on"
+        }
     },
 
     "api_server": {
         "enabled": true,
         "listen_ip_address": "127.0.0.1",
-        "listen_port": 8080,
+        "listen_port": 8081,
         "verbosity": "error",
         "enable_openapi": false,
         "jwt_secret_key": "DEGISTIR-rastgele-uzun-bir-string",

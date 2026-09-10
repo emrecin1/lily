@@ -18,10 +18,15 @@ services:
       - "./user_data:/freqtrade/user_data"
       - "./config:/freqtrade/config:ro"
     ports:
-      - "127.0.0.1:8080:8080"   # FreqUI / REST API — sadece localhost
+      - "127.0.0.1:8081:8081"   # FreqUI / REST API — sadece localhost
+    # Varsayilan: FreqAI dry-run (Asama 3 esas strateji). Sadece kural stratejisi
+    # icin: config.freqai.json + --freqaimodel satirlarini kaldir, strategy'yi
+    # AiCryptoRuleStrategy yap.
     command: >
       trade
       --logfile /freqtrade/user_data/logs/freqtrade.log
       --db-url sqlite:////freqtrade/user_data/tradesv3.dryrun.sqlite
       --config /freqtrade/config/config.dry.json
-      --strategy AiCryptoRuleStrategy
+      --config /freqtrade/config/config.freqai.json
+      --freqaimodel XGBoostClassifier
+      --strategy AiCryptoFreqAIStrategy

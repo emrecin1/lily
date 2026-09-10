@@ -194,7 +194,7 @@ property'si — config'de değil) + strateji-içi custom:
 |---|---|---|
 | İşlem başına risk | `stake_amount` (sabit USDT) veya `tradable_balance_ratio` | küçük başla |
 | Eşzamanlı pozisyon | `max_open_trades` | 3 |
-| Stop-loss | strateji `stoploss` + opsiyonel `custom_stoploss` (ATR bazlı) | -0.08 |
+| Stop-loss | GENIS sabit `stoploss` (katastrofi) + `custom_exit` time_stop | -0.20 |
 | Take-profit | `minimal_roi` | `{"0": 0.15}` |
 | Trailing | `trailing_stop` + `trailing_stop_positive(_offset)` | 0.20 / 0.02 |
 | Arka arkaya stop | `StoplossGuard` protection | 3 stop / 24h → durakla |

@@ -45,7 +45,7 @@ plumbing.
       strateji + parametreler doğru yükleniyor, hata/deprecation yok.)
       ÖNCE: `config.dry.json` `api_server` içindeki `DEGISTIR` değerlerini
       gerçek rastgele string'lerle değiştir.
-- [ ] FreqUI: `config.dry.json` `api_server` bloğu açık, `http://127.0.0.1:8080`
+- [ ] FreqUI: `config.dry.json` `api_server` bloğu açık, `http://127.0.0.1:8081`
       erişiliyor (kullanıcı/şifre config'de)
 - [ ] Telegram (opsiyonel bu aşamada): bot token + chat id, `/status` çalışıyor
 
@@ -133,21 +133,23 @@ Aşama 4-5 (risk katmanı, testnet) paralel ilerleyebilir.
 
 ## Aşama 4 — Risk katmanı + gözlemlenebilirlik + operasyon araçları
 
-- [ ] `protections` **strateji sınıfında** (`protections` property'si — yeni
-      Freqtrade sürümlerinde config'de deprecated): `StoplossGuard`,
-      `MaxDrawdown`, `CooldownPeriod`, `LowProfitPairs`. Değerleri
-      `ARCHITECTURE.md` §6. (İlk hali `AiCryptoRuleStrategy`'de mevcut —
-      gözden geçir/sıkılaştır.)
-- [ ] Custom günlük kayıp limiti: strateji `bot_loop_start` +
-      `confirm_trade_entry` içinde "bugünkü realize kayıp > %1.5 ise yeni giriş
-      yok".
-- [ ] `custom_stoploss`: ATR bazlı stop (V1 `risk_manager` mantığı).
-- [ ] `scripts/reconcile.py`: borsa pozisyon/bakiye ↔ Freqtrade `trades`
-      tablosu; fark → Telegram alarm. Cron saatlik.
-- [ ] `scripts/kill.sh`: `freqtrade` REST API `/forceexit all` + `/stop` +
-      (canlıda) ccxt ile `cancel_all_orders`.
-- [ ] Telegram: tüm giriş/çıkış/stop/hata/protection bildirimleri açık;
-      günlük özet.
+- [x] `protections` **strateji sınıfında** (her üç stratejide): `StoplossGuard`,
+      `MaxDrawdown`, `CooldownPeriod`, (rule/feature'da) `LowProfitPairs`.
+- [x] Custom günlük kayıp limiti: `AiCryptoFreqAIStrategy.confirm_trade_entry`
+      — bugün (UTC) realize kayıp > `max_daily_loss_pct` (%2) × başlangıç
+      sermayesi ise yeni giriş yok. Takvim-günü bazlı, stratejiden bağımsız
+      sert kapı. Backtest'i bozmuyor.
+- [~] `custom_stoploss`: ATR/breakeven denendi → bu stratejide **zararlı**
+      (kazananları kesiyor, docs/freqai-notes.md #5). Yerine GENİŞ sabit
+      `stoploss` (−%20 katastrofi) + `custom_exit` time_stop. Karar dokümante.
+- [x] `scripts/reconcile.py`: gerçek implementasyon — Freqtrade REST API
+      (`/ping` doğrulamalı) ↔ ccxt read-only borsa bakiye/emir. Hayalet
+      pozisyon / yetim varlık / açık emir farkı → exit 1 + Telegram. dry_run'da
+      atlar. Cron saatlik: `0 * * * * ... reconcile.py --config config/config.<mod>.json`.
+- [x] `scripts/kill.sh`: REST API `/stop` + `/forceexit all` (mevcut).
+- [x] Telegram: `notification_settings` bloğu config'lerde (entry/exit/stop/
+      protection_trigger/warning hepsi "on").
+- [x] Freqtrade API portu **8080 → 8081** (8080'de php çakışması vardı).
 - [ ] Heartbeat: `internals.heartbeat_interval` + healthchecks.io ping.
 - [ ] (Opsiyonel) Prometheus exporter + Grafana panosu.
 
