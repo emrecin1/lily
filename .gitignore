@@ -67,3 +67,6 @@ user_data/*.sqlite*
 
 # Ayri runtime sanal ortami
 .venv-rt/
+# Freqtrade runtime lock/artifact
+user_data/hyperopt.lock
+user_data/*.lock
