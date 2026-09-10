@@ -187,7 +187,8 @@ davranışı modlar arası özdeş.
 
 ## 6. Risk / koruma katmanı
 
-Freqtrade "protections" (config `protections` bloğu) + strateji-içi custom:
+Freqtrade "protections" (yeni sürümlerde **strateji sınıfında** `protections`
+property'si — config'de değil) + strateji-içi custom:
 
 | Kural | Mekanizma | Varsayılan |
 |---|---|---|

@@ -62,6 +62,39 @@ class AiCryptoRuleStrategy(IStrategy):
         "stoploss_on_exchange": False,
     }
 
+    # --- Risk korumalari --------------------------------------------------
+    # Freqtrade yeni surumlerinde 'protections' config'de DEGIL burada tanimlanir.
+    # Degerler: docs/ARCHITECTURE.md §6.
+    @property
+    def protections(self):
+        return [
+            {
+                "method": "CooldownPeriod",
+                "stop_duration_candles": 2,
+            },
+            {
+                "method": "StoplossGuard",
+                "lookback_period_candles": 24,
+                "trade_limit": 3,
+                "stop_duration_candles": 12,
+                "only_per_pair": False,
+            },
+            {
+                "method": "MaxDrawdown",
+                "lookback_period_candles": 48,
+                "trade_limit": 5,
+                "stop_duration_candles": 24,
+                "max_allowed_drawdown": 0.10,
+            },
+            {
+                "method": "LowProfitPairs",
+                "lookback_period_candles": 24,
+                "trade_limit": 2,
+                "stop_duration_candles": 12,
+                "required_profit": 0.0,
+            },
+        ]
+
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe["ema_fast"] = ta.EMA(dataframe, timeperiod=int(self.ema_fast_period.value))
         dataframe["ema_slow"] = ta.EMA(dataframe, timeperiod=int(self.ema_slow_period.value))

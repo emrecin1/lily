@@ -107,8 +107,11 @@ sinyal yok" durumu tekrarlanmıyor — `scale_pos_weight` / eşik ayarı yapıld
 
 ## Aşama 4 — Risk katmanı + gözlemlenebilirlik + operasyon araçları
 
-- [ ] `config` `protections` bloğu: `StoplossGuard`, `MaxDrawdown`,
-      `CooldownPeriod`, `LowProfitPairs`. Değerleri `ARCHITECTURE.md` §6.
+- [ ] `protections` **strateji sınıfında** (`protections` property'si — yeni
+      Freqtrade sürümlerinde config'de deprecated): `StoplossGuard`,
+      `MaxDrawdown`, `CooldownPeriod`, `LowProfitPairs`. Değerleri
+      `ARCHITECTURE.md` §6. (İlk hali `AiCryptoRuleStrategy`'de mevcut —
+      gözden geçir/sıkılaştır.)
 - [ ] Custom günlük kayıp limiti: strateji `bot_loop_start` +
       `confirm_trade_entry` içinde "bugünkü realize kayıp > %1.5 ise yeni giriş
       yok".
