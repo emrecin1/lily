@@ -1,1 +1,71 @@
-[tool]
+[project]
+name = "ai-crypto-bot"
+version = "2.0.0.dev0"
+description = "ML destekli, risk yönetimi öncelikli Binance spot trading botu (Freqtrade + FreqAI omurga)"
+requires-python = ">=3.12,<3.13"
+readme = "README.md"
+
+# V1 araştırma / referans pipeline'ının bağımlılıkları.
+# Canlı runtime (freqtrade) AYRI bir sanal ortamda kurulur — bkz. docs/MIGRATION.md.
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24,<2.0",
+    "scikit-learn>=1.3",
+    "xgboost>=2.0,<3.0",
+    "joblib>=1.3",
+    "ccxt>=4.0",
+    "ta>=0.11",
+    "python-dotenv>=1.0",
+    "SQLAlchemy>=2.0",
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+# Eski FastAPI+React dashboard (V2'de FreqUI ile değişiyor; referans için).
+dashboard = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pandas-stubs",
+    "types-requests",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src"]
+
+# --------------------------------------------------------------------------- #
+# Tooling
+# --------------------------------------------------------------------------- #
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = ["E501"]  # satır uzunluğu formatter'a bırakıldı
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_ignores = true
+warn_redundant_casts = true
+ignore_missing_imports = true
+check_untyped_defs = true
+files = ["src"]

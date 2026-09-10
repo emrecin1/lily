@@ -1,0 +1,89 @@
+{
+    "$schema": "https://schema.freqtrade.io/schema.json",
+    "//": "MAINNET ornek. SADECE docs/MIGRATION.md Asama 5 tamamlaninca kullan.",
+    "//2": "Kopyala -> config/config.live.json (gitignore, chmod 600). API key: SADECE spot trade, WITHDRAWAL KAPALI, borsada IP allow-list.",
+
+    "max_open_trades": 1,
+    "stake_currency": "USDT",
+    "stake_amount": 20,
+    "tradable_balance_ratio": 0.5,
+    "fiat_display_currency": "USD",
+    "timeframe": "4h",
+
+    "dry_run": false,
+    "cancel_open_orders_on_exit": true,
+    "trading_mode": "spot",
+    "margin_mode": "",
+
+    "minimal_roi": { "0": 0.15 },
+    "stoploss": -0.08,
+
+    "unfilledtimeout": { "entry": 10, "exit": 10, "exit_timeout_count": 0, "unit": "minutes" },
+    "entry_pricing": { "price_side": "same", "use_order_book": true, "order_book_top": 1 },
+    "exit_pricing": { "price_side": "same", "use_order_book": true, "order_book_top": 1 },
+
+    "exchange": {
+        "name": "binance",
+        "key": "MAINNET_API_KEY",
+        "secret": "MAINNET_API_SECRET",
+        "ccxt_config": {},
+        "ccxt_async_config": {},
+        "pair_whitelist": [ "BTC/USDT" ],
+        "pair_blacklist": []
+    },
+
+    "pairlists": [ { "method": "StaticPairList" } ],
+
+    "protections": [
+        { "method": "CooldownPeriod", "stop_duration_candles": 3 },
+        {
+            "method": "StoplossGuard",
+            "lookback_period_candles": 24,
+            "trade_limit": 2,
+            "stop_duration_candles": 24,
+            "only_per_pair": false
+        },
+        {
+            "method": "MaxDrawdown",
+            "lookback_period_candles": 96,
+            "trade_limit": 4,
+            "stop_duration_candles": 48,
+            "max_allowed_drawdown": 0.08
+        }
+    ],
+
+    "telegram": {
+        "enabled": true,
+        "token": "TELEGRAM_BOT_TOKEN",
+        "chat_id": "TELEGRAM_CHAT_ID",
+        "notification_settings": {
+            "status": "on",
+            "entry": "on",
+            "exit": "on",
+            "entry_cancel": "on",
+            "exit_cancel": "on",
+            "protection_trigger": "on",
+            "protection_trigger_global": "on"
+        }
+    },
+
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "127.0.0.1",
+        "listen_port": 8080,
+        "verbosity": "error",
+        "jwt_secret_key": "DEGISTIR",
+        "ws_token": "DEGISTIR",
+        "username": "freqtrader",
+        "password": "DEGISTIR"
+    },
+
+    "bot_name": "ai-crypto-bot-live",
+    "initial_state": "stopped",
+    "force_entry_enable": false,
+
+    "internals": { "process_throttle_secs": 5, "heartbeat_interval": 60 },
+
+    "dataformat_ohlcv": "feather",
+    "db_url": "sqlite:///user_data/tradesv3.live.sqlite"
+}

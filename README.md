@@ -5,6 +5,13 @@ AI destekli, risk yönetimi öncelikli bir **BTC/USDT spot long-only** trading b
 > ⚠️ **UYARI:** Bu proje finansal tavsiye değildir. Backtest performansı gelecekteki
 > performansı garanti etmez. Kripto para trading'i yüksek risk içerir.
 
+> 🔄 **V2 geçişi sürüyor.** Real-time / otomatik alım-satım için proje
+> **Freqtrade + FreqAI** omurgasına taşınıyor. Aşağıda anlatılan V1 CLI pipeline'ı
+> (`src/`, `main.py`) **araştırma / referans** olarak korunuyor.
+> - Hedef mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+> - Omurga kararı: [`docs/adr/0001-backbone.md`](docs/adr/0001-backbone.md)
+> - Aşama aşama geçiş: [`docs/MIGRATION.md`](docs/MIGRATION.md)
+
 ## Amaç
 
 Bu proje, AI destekli sinyaller üreten ancak nihai kararı **Signal Engine + Risk Manager**'a

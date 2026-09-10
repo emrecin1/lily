@@ -1,0 +1,27 @@
+# Freqtrade runtime — dry-run varsayilan.
+# Kullanim:
+#   docker compose run --rm freqtrade download-data --timeframe 4h --timerange 20240101-
+#   docker compose up -d          # dry-run trade baslat
+#   docker compose logs -f
+#   docker compose down
+#
+# Testnet/live icin: command'daki --config'i degistir + ilgili config dosyasini
+# ekle (config.testnet.json / config.live.json gitignore'da).
+
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    # Surumu sabitlemek icin: freqtradeorg/freqtrade:2024.9  (canliya cikmadan pinle)
+    restart: unless-stopped
+    container_name: ai-crypto-bot
+    volumes:
+      - "./user_data:/freqtrade/user_data"
+      - "./config:/freqtrade/config:ro"
+    ports:
+      - "127.0.0.1:8080:8080"   # FreqUI / REST API — sadece localhost
+    command: >
+      trade
+      --logfile /freqtrade/user_data/logs/freqtrade.log
+      --db-url sqlite:////freqtrade/user_data/tradesv3.dryrun.sqlite
+      --config /freqtrade/config/config.dry.json
+      --strategy AiCryptoRuleStrategy

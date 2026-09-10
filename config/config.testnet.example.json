@@ -1,0 +1,102 @@
+{
+    "$schema": "https://schema.freqtrade.io/schema.json",
+    "//": "TESTNET ornek. Kopyala -> config/config.testnet.json (gitignore'da), key'leri doldur.",
+    "//2": "Binance spot testnet: https://testnet.binance.vision uzerinden API key olustur (trade yetkisi).",
+
+    "max_open_trades": 2,
+    "stake_currency": "USDT",
+    "stake_amount": 200,
+    "tradable_balance_ratio": 0.99,
+    "fiat_display_currency": "USD",
+    "timeframe": "4h",
+
+    "dry_run": false,
+    "cancel_open_orders_on_exit": true,
+    "trading_mode": "spot",
+    "margin_mode": "",
+
+    "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+
+    "entry_pricing": {
+        "price_side": "same",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+    "exit_pricing": {
+        "price_side": "same",
+        "use_order_book": true,
+        "order_book_top": 1
+    },
+
+    "exchange": {
+        "name": "binance",
+        "key": "TESTNET_API_KEY",
+        "secret": "TESTNET_API_SECRET",
+        "//": "Testnet'i acmak icin kurulu freqtrade surumunun dokumanina gore ya asagidaki",
+        "//2": "sandbox flag'ini ya da ccxt_config.urls'i kullan. ONCE 'freqtrade' docs 'Sandbox' bolumunu dogrula.",
+        "sandbox": true,
+        "ccxt_config": {},
+        "ccxt_async_config": {},
+        "pair_whitelist": [
+            "BTC/USDT",
+            "ETH/USDT"
+        ],
+        "pair_blacklist": []
+    },
+
+    "pairlists": [
+        { "method": "StaticPairList" }
+    ],
+
+    "protections": [
+        { "method": "CooldownPeriod", "stop_duration_candles": 2 },
+        {
+            "method": "StoplossGuard",
+            "lookback_period_candles": 24,
+            "trade_limit": 3,
+            "stop_duration_candles": 12,
+            "only_per_pair": false
+        },
+        {
+            "method": "MaxDrawdown",
+            "lookback_period_candles": 48,
+            "trade_limit": 5,
+            "stop_duration_candles": 24,
+            "max_allowed_drawdown": 0.10
+        }
+    ],
+
+    "telegram": {
+        "enabled": true,
+        "token": "TELEGRAM_BOT_TOKEN",
+        "chat_id": "TELEGRAM_CHAT_ID"
+    },
+
+    "api_server": {
+        "enabled": true,
+        "listen_ip_address": "127.0.0.1",
+        "listen_port": 8080,
+        "verbosity": "error",
+        "jwt_secret_key": "DEGISTIR",
+        "ws_token": "DEGISTIR",
+        "username": "freqtrader",
+        "password": "DEGISTIR"
+    },
+
+    "bot_name": "ai-crypto-bot-testnet",
+    "initial_state": "stopped",
+    "force_entry_enable": false,
+
+    "internals": {
+        "process_throttle_secs": 5,
+        "heartbeat_interval": 60
+    },
+
+    "dataformat_ohlcv": "feather",
+    "db_url": "sqlite:///user_data/tradesv3.testnet.sqlite"
+}
