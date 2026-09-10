@@ -62,10 +62,8 @@ user_data/logs/
 user_data/backtest_results/
 user_data/hyperopt_results/
 user_data/plot/
-user_data/*.sqlite
-user_data/*.sqlite-journal
-*.sqlite
-*.sqlite-journal
+user_data/*.sqlite*
+*.sqlite*
 
 # Ayri runtime sanal ortami
 .venv-rt/

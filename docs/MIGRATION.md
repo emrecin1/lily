@@ -32,11 +32,19 @@ plumbing.
 - [ ] `! freqtrade create-userdir --userdir user_data` (varsa atla)
 - [ ] `config/config.dry.json` içindeki `pair_whitelist`, `max_open_trades`,
       `dry_run_wallet`, `timeframe` gözden geçir
-- [ ] `! freqtrade download-data --config config/config.dry.json --timerange 20240101- --timeframe 4h`
-- [ ] `! freqtrade backtesting --config config/config.dry.json --strategy AiCryptoRuleStrategy --timerange 20240101-20250101`
-      → hata almadan sonuç üretmeli (kâr/zarar önemli değil; boru hattı önemli)
+- [x] `! freqtrade download-data --config config/config.dry.json --timeframe 4h --timerange 20230101-`
+      NOT: EMA200 ısınması için test aralığından ~1 yıl önce veri gerekir.
+      Freqtrade artımlı indirir; daha eski veri için **`--prepend`** şart:
+      `! freqtrade download-data ... --timerange 20230101- --prepend`
+- [x] `! freqtrade backtesting --config config/config.dry.json --strategy AiCryptoRuleStrategy --timerange 20240101-20250101 --cache none`
+      → ✅ hatasız çalışıyor. Sonuç: 103 işlem, -6.37%, win %27 (V1 ile tutarlı:
+      bu basit kural stratejisi kârlı değil — Aşama 2'de hyperopt).
+      `--cache none` yoksa Freqtrade önceki sonucu cache'den döndürebilir.
 - [ ] `! freqtrade trade --config config/config.dry.json --strategy AiCryptoRuleStrategy`
-      → birkaç saat/gün koştur
+      → birkaç saat/gün koştur. (Boot smoke-test'i ✅ geçti: dry_run enabled,
+      strateji + parametreler doğru yükleniyor, hata/deprecation yok.)
+      ÖNCE: `config.dry.json` `api_server` içindeki `DEGISTIR` değerlerini
+      gerçek rastgele string'lerle değiştir.
 - [ ] FreqUI: `config.dry.json` `api_server` bloğu açık, `http://127.0.0.1:8080`
       erişiliyor (kullanıcı/şifre config'de)
 - [ ] Telegram (opsiyonel bu aşamada): bot token + chat id, `/status` çalışıyor
