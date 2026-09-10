@@ -30,7 +30,7 @@ from pathlib import Path
 import numpy as np
 from pandas import DataFrame
 
-from freqtrade.strategy import IStrategy, RealParameter
+from freqtrade.strategy import DecimalParameter, IStrategy, RealParameter
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -48,10 +48,17 @@ class AiCryptoFreqAIStrategy(IStrategy):
     timeframe = "4h"
     can_short = False
 
-    # Cikis KARARI esas olarak modele ait (freqai_down sinyali). Ilk tam backtest
-    # (docs/freqai-notes.md): freqai_down cikislari +%76, ama -%8 sabit stop -%110
-    # kaybettirdi (modeli whipsaw ile atiyordu). Sabit stop artik yalnizca
-    # KATASTROFI backstop'u; ROI korunur; trailing kapali (modele birak).
+    # Cikis KARARI esas olarak modele ait (freqai_down sinyali). Backtest
+    # (docs/freqai-notes.md): freqai_down cikislari kârli; kayip, modelin kotu
+    # yanildigi azinlik girisin sert stop'a dusmesinden. Sabit stop = GENIS
+    # katastrofi backstop'u; kâr korumasi custom_stoploss (breakeven+trail) ile.
+    # Deney gecmisi (docs/freqai-notes.md):
+    #  - -%8 sabit stop  -> -21.8% (whipsaw)
+    #  - -%20 sabit stop -> -10.7%
+    #  - + buy_proba 0.62 -> -6.3%  (en iyi)
+    #  - + breakeven custom_stoploss -> -22% (kazananlari kesti; GERI ALINDI)
+    # Sonuc: modelin kâr tarafina karisma. Tek sorun = azinlik yanlis girisin
+    # -%20'ye dusmesi. Cozum: eski+zararda pozisyonlar icin zaman-stop.
     minimal_roi = {"0": 0.15}
     stoploss = -0.20
     trailing_stop = False
@@ -62,9 +69,13 @@ class AiCryptoFreqAIStrategy(IStrategy):
 
     startup_candle_count: int = 400
 
-    # P(up) giris esigi. V1 varsayilani 0.70 idi ve hic sinyal uretmiyordu;
-    # daha dusuk basla, hyperopt ile ayarla (space="buy").
-    buy_proba = RealParameter(0.50, 0.75, default=0.62, space="buy", optimize=True)
+    # P(up) giris esigi. V1 varsayilani 0.70 idi ve hic sinyal uretmiyordu.
+    buy_proba = RealParameter(0.50, 0.75, default=0.65, space="buy", optimize=True)
+    # Zaman-stop: trade time_stop_candles'tan eski VE kâr < time_stop_loss ise cik.
+    time_stop_candles = DecimalParameter(6, 24, default=12, decimals=0,
+                                         space="sell", optimize=True)
+    time_stop_loss = DecimalParameter(-0.12, -0.02, default=-0.05, decimals=2,
+                                      space="sell", optimize=True)
 
     order_types = {
         "entry": "limit",
@@ -145,6 +156,18 @@ class AiCryptoFreqAIStrategy(IStrategy):
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe = self.freqai.start(dataframe, metadata, self)
         return dataframe
+
+    def custom_exit(
+        self, pair: str, trade, current_time, current_rate: float,
+        current_profit: float, **kwargs
+    ) -> str | None:
+        """Zaman-stop: modelin 'down' demedigi ama uzun suredir zararda olan
+        pozisyonlari kes. Sert -%20 stop'a dusen 19 felaket islemi hedefler,
+        kazananlara dokunmaz (onlar ya kârda ya kisa omurlu)."""
+        age = (current_time - trade.open_date_utc).total_seconds() / 3600 / 4
+        if age >= self.time_stop_candles.value and current_profit <= self.time_stop_loss.value:
+            return "time_stop"
+        return None
 
     def populate_entry_trend(self, df: DataFrame, metadata: dict) -> DataFrame:
         up_proba = df["up"] if "up" in df.columns else 0.0
