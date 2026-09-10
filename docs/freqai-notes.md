@@ -78,6 +78,32 @@ FreqAI hyperopt de Aşama 2 gibi overfit etti: in-sample +15.5%, OOS −5.95%.
 Bulduğu `stoploss = −34.3%` yine arama uzayı kenarında ("stop yok" hilesi).
 **Yapısal değişiklik (trend filtresi) > parametre ayarı.**
 
+### #9 — 3-sınıflı target denemesi (deney; #8'e döndü)
+
+`set_freqai_targets`: `|future_return(4)| >= %1.5` → "up"/"down", arası "flat".
+Giriş yalnızca net "up" tahmininde. Full 2024-2026:
+
+| | #8 binary + trend | #9 3-sınıf + trend |
+|---|---|---|
+| Getiri | +9.23% | +6.90% |
+| İşlem | 287 | **85** |
+| `freqai_down` win% | 65% | **85%** |
+| Max DD | 3.3% | 4.5% |
+| Profit factor | 1.31 | 1.31 |
+
+3-sınıf çok daha az/temiz işlem (fee + operasyon yükü düşük), per-trade kalitesi
+yüksek — ama `time_stop` kaybı (−%21) yine kazancı büyük ölçüde yiyor ve toplam
+getiri biraz düşük. **#8 (binary + trend) esas alındı**; 3-sınıf ileride
+`label_period_candles` + band birlikte ayarlanarak tekrar denenebilir.
+
+### Kalıcı sorun (tüm varyantlarda)
+
+Her config'de `time_stop` / wrong-entry kaybı ~−%20. Model yön tahmininde
+iyi (freqai_down %65-85 win) ama emin-ama-yanlış girişler günlerce düşüp
+time_stop'a gidiyor. Bunu asıl çözecek: daha güçlü feature'lar (çoklu
+timeframe, funding rate, orderbook imbalance), rejim tespiti, veya 4h TA'nın
+tek başına yetmediğini kabul edip veri kaynağı genişletmek.
+
 ### Kritik bulgu: modelin edge'i GERÇEK, kayıp trade yönetiminden
 
 Çıkış nedeni dökümü (ayar #3):
