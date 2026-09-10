@@ -81,12 +81,16 @@ Amaç: Freqtrade stratejisi V1 ile aynı feature'ları + aynı sinyal mantığı
       - parity-doğru strateji: `AiCryptoFeatureStrategy` (talib değil `ta`)
 - [x] Regresyon testi: `tests/test_phase2b_feature_parity.py` (determinizm,
       no-lookahead, 25 feature, input mutasyonu yok).
-- [ ] `! .venv-rt/bin/freqtrade hyperopt --config config/config.dry.json --strategy AiCryptoFeatureStrategy --hyperopt-loss SharpeHyperOptLoss --spaces buy sell roi stoploss trailing --epochs 300 --timerange 20230101-20250101`
-- [ ] En iyi parametreleri stratejiye sabitle; **out-of-sample** dönemde
-      (hyperopt'a girmeyen tarih aralığı, ör. 2025-01-01→) doğrula.
+- [x] `! .venv-rt/bin/freqtrade hyperopt ... --epochs 300 --timerange 20230101-20250101`
+      (hyperopt bağımlılıkları + `joblib` 1.4.2 pin — bkz. `docs/hyperopt-notes.md`)
+- [x] **Out-of-sample doğrulama yapıldı → params OVERFIT.**
+      in-sample +19.94% ama 2025-01→ out-of-sample **-11.84%** (default'tan
+      daha kötü: -4.99%). Params repoya alınmadı; strateji kod varsayılanlarında.
+      Tam analiz: `docs/hyperopt-notes.md`.
 
-**Çıkış kriteri:** parity dokümante edildi ✅ (`docs/parity-notes.md`), hyperopt
-parametreleri out-of-sample'da çökmüyor (bekliyor).
+**Çıkış kriteri:** parity dokümante edildi ✅ (`docs/parity-notes.md`).
+Hyperopt sonucu: ham EMA/RSI kuralının kalıcı edge'i yok, ayarla düzelmiyor →
+**Aşama 3'e (FreqAI) geçiş için gerekçe.** ✅ (`docs/hyperopt-notes.md`)
 
 ---
 
