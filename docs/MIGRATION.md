@@ -65,22 +65,28 @@ docker compose logs -f
 
 ## Aşama 2 — Backtest parity + parametre araması
 
-Amaç: Freqtrade backtest sonuçları V1 `src/backtest` ile tutarlı; feature
-tanımları tek kaynaktan.
+Amaç: Freqtrade stratejisi V1 ile aynı feature'ları + aynı sinyal mantığını
+üretiyor; feature tanımı tek kaynaktan.
 
-- [ ] `src/features/indicators.py`'deki feature listesini strateji
-      `populate_indicators`'a taşı (EMA20/50/100/200, RSI, MACD, ATR, ROC,
-      returns, volume z-score...). Aynı `ta`/`talib` parametreleri.
-- [ ] Aynı sembol + dönem için V1 backtest (`python main.py backtest`) ve
-      Freqtrade backtesting sonuçlarını karşılaştır: işlem sayısı, win rate,
-      toplam getiri aynı büyüklük mertebesinde olmalı. Büyük sapma → araştır
-      (fill modeli, fee, timeframe hizası).
-- [ ] `! freqtrade hyperopt --config config/config.dry.json --strategy AiCryptoRuleStrategy --hyperopt-loss SharpeHyperOptLoss --spaces buy sell roi stoploss trailing --epochs 300 --timerange 20230101-20250101`
+- [x] `src/features/indicators.py` import-güvenli yapıldı (yalnız numpy/pandas/ta).
+- [x] `AiCryptoFeatureStrategy`: `add_indicators()`'ı **doğrudan çağırır** —
+      25 feature V1 ile birebir (yeniden implementasyon yok).
+- [x] `.venv-rt`'ye `ta` + `python-dotenv` kuruldu.
+- [x] Parity kontrolü yapıldı ve dokümante edildi: **`docs/parity-notes.md`**.
+      - feature değerleri: `max_rel ≤ 1e-12` (özdeş)
+      - giriş mantığı: V1 +1 mum kayma ile 23/23 eşleşiyor
+      - 1 mum fark = Freqtrade doğru; V1 kural motorunda 1-bar lookahead tespit
+        edildi (V1 referans olduğu için düzeltilmedi)
+      - `startup_candle_count` 240→400 (EMA200 warmup)
+      - parity-doğru strateji: `AiCryptoFeatureStrategy` (talib değil `ta`)
+- [x] Regresyon testi: `tests/test_phase2b_feature_parity.py` (determinizm,
+      no-lookahead, 25 feature, input mutasyonu yok).
+- [ ] `! .venv-rt/bin/freqtrade hyperopt --config config/config.dry.json --strategy AiCryptoFeatureStrategy --hyperopt-loss SharpeHyperOptLoss --spaces buy sell roi stoploss trailing --epochs 300 --timerange 20230101-20250101`
 - [ ] En iyi parametreleri stratejiye sabitle; **out-of-sample** dönemde
-      (hyperopt'a girmeyen tarih aralığı) doğrula.
+      (hyperopt'a girmeyen tarih aralığı, ör. 2025-01-01→) doğrula.
 
-**Çıkış kriteri:** parity dokümante edildi (`docs/parity-notes.md`), hyperopt
-parametreleri out-of-sample'da çökmüyor.
+**Çıkış kriteri:** parity dokümante edildi ✅ (`docs/parity-notes.md`), hyperopt
+parametreleri out-of-sample'da çökmüyor (bekliyor).
 
 ---
 

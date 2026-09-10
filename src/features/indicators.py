@@ -26,7 +26,11 @@ Feature categories and documentation:
         ret_1, ret_3, ret_6, ret_12, ret_24 : returns over N periods
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -34,11 +38,13 @@ from ta.momentum import ROCIndicator, RSIIndicator
 from ta.trend import EMAIndicator, MACD
 from ta.volatility import AverageTrueRange
 
-from src.config import Config
-from src.logging_config import get_logger
+if TYPE_CHECKING:
+    from src.config import Config
 
-
-logger = get_logger("features.indicators")
+# NOT: Bu modul bilerek yalnizca numpy/pandas/ta'ya baglidir (src.config /
+# src.logging_config'e DEGIL) — Freqtrade stratejisi add_indicators()'i dogrudan
+# import edip V1 ile birebir ayni feature'lari uretebilsin diye. Bkz. Asama 2.
+logger = logging.getLogger("ai-crypto-bot.features.indicators")
 
 
 @dataclass(frozen=True)

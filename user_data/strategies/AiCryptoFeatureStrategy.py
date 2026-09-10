@@ -1,59 +1,62 @@
 """
-AiCryptoRuleStrategy — deterministik Trend + RSI (EMA20/EMA50 + RSI14).
+AiCryptoFeatureStrategy — V1 feature seti + ayni EMA/RSI kural mantigi.
 
-V1'deki src/rules/signal.py mantiginin Freqtrade IStrategy (v3) portu.
-ML YOK. Amac: dry-run boru hattini (veri -> indikator -> sinyal -> risk ->
-execution -> FreqUI/Telegram) ucdan uca dogrulamak.  Bkz. docs/MIGRATION.md Asama 1.
+Amac (docs/MIGRATION.md Asama 2):
+  1. V1'in `src/features/indicators.add_indicators()` fonksiyonunu DOGRUDAN
+     cagirarak 25 feature'i Freqtrade tarafinda BIREBIR ayni uretmek
+     (talib degil, V1 ile ayni `ta` kutuphanesi -> numerik parity).
+  2. Giris/cikis kurali AiCryptoRuleStrategy ile ozdes (yalnizca ema20/ema50/rsi
+     kullanir) -> iki strateji ayni islemleri uretmeli; uretmezse fark
+     tamamen talib<->ta EMA/RSI farkindan gelir ve olculur.
 
-Kural:
-    Giris (long)  : EMA_fast > EMA_slow  VE  RSI < rsi_buy_max
-    Cikis (long)  : EMA_fast < EMA_slow  VEYA RSI > rsi_sell_max
-    ayrica        : minimal_roi (+%15 TP), stoploss (-%8), trailing (%20 geri verme)
-
-Parametreler hyperopt'a acik (Asama 2):
-    freqtrade hyperopt --strategy AiCryptoRuleStrategy \
-        --hyperopt-loss SharpeHyperOptLoss --spaces buy sell roi stoploss trailing
+FreqAI'ye (Asama 3) gecince bu 25 feature `feature_engineering_*` callback'lerine
+taşınır; simdilik populate_indicators icinde tek blok.
 """
 
 from __future__ import annotations
 
-import talib.abstract as ta
+import sys
+from pathlib import Path
+
 from pandas import DataFrame
 
 from freqtrade.strategy import IStrategy, IntParameter
 
+# --- V1 feature fonksiyonunu import et (tek dogruluk kaynagi) --------------
+# user_data/strategies/AiCryptoFeatureStrategy.py -> repo koku 2 seviye yukarida.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-class AiCryptoRuleStrategy(IStrategy):
+from src.features.indicators import FeatureColumns as FC  # noqa: E402
+from src.features.indicators import add_indicators  # noqa: E402
+
+# ml.dataset.feature_columns() 25 model feature'ini sirali dondurur.
+from src.ml.dataset import feature_columns as v1_feature_columns  # noqa: E402
+
+
+class AiCryptoFeatureStrategy(IStrategy):
     INTERFACE_VERSION = 3
 
     timeframe = "4h"
     can_short = False
 
-    # --- Cikis muhasebesi (V1 RulesConfig varsayilanlari) --------------------
-    # +%15 take-profit (zamana bagli kademe yok, sabit hedef).
     minimal_roi = {"0": 0.15}
-    # -%8 sabit stop-loss.
     stoploss = -0.08
-    # Trailing: kar moduna girince tepe fiyatin %20 altinda kapat.
     trailing_stop = True
     trailing_stop_positive = 0.20
     trailing_stop_positive_offset = 0.22
     trailing_only_offset_is_reached = True
 
-    # Sinyal yalnizca mum KAPANISINDA uretilir (tekrarlanabilirlik).
     process_only_new_candles = True
     use_exit_signal = True
     exit_profit_only = False
     ignore_roi_if_entry_signal = False
 
-    # EMA200 isinmasi + guvenli pay.
     startup_candle_count: int = 400  # EMA200 warmup (parity notlari: docs/parity-notes.md)
 
-    # --- Hyperopt parametreleri --------------------------------------------
     buy_rsi_max = IntParameter(20, 60, default=45, space="buy", optimize=True)
     sell_rsi_max = IntParameter(55, 90, default=70, space="sell", optimize=True)
-    ema_fast_period = IntParameter(10, 30, default=20, space="buy", optimize=False)
-    ema_slow_period = IntParameter(40, 100, default=50, space="buy", optimize=False)
 
     order_types = {
         "entry": "limit",
@@ -62,16 +65,10 @@ class AiCryptoRuleStrategy(IStrategy):
         "stoploss_on_exchange": False,
     }
 
-    # --- Risk korumalari --------------------------------------------------
-    # Freqtrade yeni surumlerinde 'protections' config'de DEGIL burada tanimlanir.
-    # Degerler: docs/ARCHITECTURE.md §6.
     @property
     def protections(self):
         return [
-            {
-                "method": "CooldownPeriod",
-                "stop_duration_candles": 2,
-            },
+            {"method": "CooldownPeriod", "stop_duration_candles": 2},
             {
                 "method": "StoplossGuard",
                 "lookback_period_candles": 24,
@@ -96,16 +93,23 @@ class AiCryptoRuleStrategy(IStrategy):
         ]
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        dataframe["ema_fast"] = ta.EMA(dataframe, timeperiod=int(self.ema_fast_period.value))
-        dataframe["ema_slow"] = ta.EMA(dataframe, timeperiod=int(self.ema_slow_period.value))
-        dataframe["rsi"] = ta.RSI(dataframe, timeperiod=14)
-        return dataframe
+        # V1 ile BIREBIR ayni hesap: ayni fonksiyon, ayni `ta` kutuphanesi.
+        # add_indicators() OHLCV kolonlarini bekler (Freqtrade df'sinde mevcut),
+        # 25 feature + ema100/ema200 vb. ekler, satir sayisini/index'i korur.
+        out = add_indicators(dataframe)
+
+        # Kolon adlarini FeatureColumns uzerinden dogrula (drift kontrolu).
+        expected = set(v1_feature_columns())
+        missing = expected - set(out.columns)
+        if missing:
+            raise RuntimeError(f"add_indicators eksik feature uretti: {sorted(missing)}")
+        return out
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe.loc[
             (
-                (dataframe["ema_fast"] > dataframe["ema_slow"])
-                & (dataframe["rsi"] < self.buy_rsi_max.value)
+                (dataframe[FC.EMA20] > dataframe[FC.EMA50])
+                & (dataframe[FC.RSI] < self.buy_rsi_max.value)
                 & (dataframe["volume"] > 0)
             ),
             ["enter_long", "enter_tag"],
@@ -116,8 +120,8 @@ class AiCryptoRuleStrategy(IStrategy):
         dataframe.loc[
             (
                 (
-                    (dataframe["ema_fast"] < dataframe["ema_slow"])
-                    | (dataframe["rsi"] > self.sell_rsi_max.value)
+                    (dataframe[FC.EMA20] < dataframe[FC.EMA50])
+                    | (dataframe[FC.RSI] > self.sell_rsi_max.value)
                 )
                 & (dataframe["volume"] > 0)
             ),
