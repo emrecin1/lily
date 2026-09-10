@@ -94,32 +94,35 @@ Hyperopt sonucu: ham EMA/RSI kuralının kalıcı edge'i yok, ayarla düzelmiyor
 
 ---
 
-## Aşama 3 — FreqAI (ML sinyali)
+## Aşama 3 — FreqAI (ML sinyali)   ← DEVAM EDİYOR
 
-Amaç: `AiCryptoFreqAIStrategy` — XGBoost tahmini, rolling retrain, tahmin eşiği
-→ giriş sinyali. dry-run'da forward-test.
+Amaç: `AiCryptoFreqAIStrategy` — XGBoost tahmini, walk-forward retrain, tahmin
+eşiği → giriş sinyali. dry-run'da forward-test.
 
-- [ ] `config/config.dry.json`'a `freqai` bloğu ekle:
-      `train_period_days`, `backtest_period_days`, `identifier`,
-      `feature_parameters` (indicator periyotları, `include_timeframes`,
-      `label_period_candles`), `data_split_parameters`,
-      `model_training_parameters` (XGBoost hiperparametreleri — V1'deki
-      `MLConfig` değerleri başlangıç).
-- [ ] Strateji `feature_engineering_expand_all` / `feature_engineering_standard`
-      / `set_freqai_targets` callback'lerini yaz. Hedef: V1'deki
-      `future_return_{h} >= min_return` mantığı (`&get_data_split` yerine
-      `label_period_candles`).
-- [ ] `--freqaimodel XGBoostClassifier` (veya regressor + eşik).
-- [ ] `! freqtrade backtesting --config config/config.dry.json --strategy AiCryptoFreqAIStrategy --freqaimodel XGBoostClassifier --timerange 20240101-20250601`
-      → no-lookahead sanity: FreqAI otomatik purged split yapar; yine de
-      feature'larda `.shift(-x)` sızıntısı yok mu kontrol et.
-- [ ] Feature importance çıktısını incele (`user_data/models/<id>/`).
-- [ ] dry-run'da 1-2 hafta forward-test; tahmin dağılımı + gerçekleşen hit-rate
-      logla.
+- [x] `config/config.freqai.json` (overlay): `train_period_days=180`,
+      `backtest_period_days=7` (haftalık walk-forward), `feature_parameters`,
+      `model_training_parameters` (V1 `MLConfig` değerleri).
+- [x] `AiCryptoFreqAIStrategy`: `feature_engineering_expand_basic` V1'in
+      `add_indicators()`'ini doğrudan çağırır (25 feature, Aşama 2 parity);
+      + expand_all + standard = 35 feature. `set_freqai_targets` = V1 hedefi
+      (`future_return(4) >= 0.008` → "up"/"down").
+- [x] `src/features/indicators.py`: kısa-frame guard (`len<30 → NaN feature'lar`)
+      — FreqAI probe'u `ta` ATR/RSI'ı çökertiyordu. 104 test geçer.
+- [x] `--freqaimodel XGBoostClassifier` ile backtest çalıştırıldı (4 coin,
+      2024-01→2026-09, walk-forward). Hata yok, no-lookahead FreqAI garantisi.
+- [x] İlk sonuçlar + teşhis: `docs/freqai-notes.md`.
+      **Model edge'i gerçek** (`freqai_down` çıkışları +%27, %60 win) ama
+      strateji henüz net negatif (−%6.3 best); kayıp trade-yönetiminden
+      (sert stop + fee churn), model sinyalinden değil.
+- [ ] ATR bazlı `custom_stoploss`, `buy_proba` hyperopt (out-of-sample!),
+      `weight_factor` / `scale_pos_weight`, `label_period_candles` denemesi.
+      (Öncelik listesi: `docs/freqai-notes.md` "Sıradaki adımlar".)
+- [ ] Feature importance incele.
+- [ ] dry-run'da 1-2 hafta forward-test; tahmin dağılımı + gerçekleşen hit-rate.
 
-**Çıkış kriteri:** FreqAI backtest sızıntısız, dry-run forward-test'te model
-mantıklı sıklıkta ve makul isabetle sinyal üretiyor (V1'deki "eşik 0.70'te hiç
-sinyal yok" durumu tekrarlanmıyor — `scale_pos_weight` / eşik ayarı yapıldı).
+**Çıkış kriteri:** FreqAI strateji dry-run'da **net pozitif** + out-of-sample
+dayanıklı (Aşama 2 hyperopt dersi: tek in-sample yetmez). Şu an: pipeline ✅,
+edge ✅, kârlılık ❌ (tuning sürüyor).
 
 ---
 

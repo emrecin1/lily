@@ -87,6 +87,20 @@ class FeatureColumns:
     RET_24 = "ret_24"
 
 
+# Every feature column add_indicators() produces (the 25 model features).
+ALL_FEATURE_COLUMNS: tuple[str, ...] = (
+    FeatureColumns.EMA20, FeatureColumns.EMA50, FeatureColumns.EMA100, FeatureColumns.EMA200,
+    FeatureColumns.CLOSE_EMA20, FeatureColumns.CLOSE_EMA50,
+    FeatureColumns.EMA20_EMA50, FeatureColumns.EMA50_EMA200,
+    FeatureColumns.RSI, FeatureColumns.MACD, FeatureColumns.MACD_SIGNAL,
+    FeatureColumns.MACD_HIST, FeatureColumns.ROC,
+    FeatureColumns.ATR, FeatureColumns.VOL_12, FeatureColumns.VOL_24, FeatureColumns.VOL_48,
+    FeatureColumns.VOLUME_CHANGE, FeatureColumns.VOLUME_SMA_RATIO, FeatureColumns.VOLUME_ZSCORE,
+    FeatureColumns.RET_1, FeatureColumns.RET_3, FeatureColumns.RET_6,
+    FeatureColumns.RET_12, FeatureColumns.RET_24,
+)
+
+
 def _ema(series: pd.Series, period: int) -> pd.Series:
     return EMAIndicator(series, window=period).ema_indicator()
 
@@ -105,8 +119,19 @@ def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
     Important: this function mutates/annotates a copy; the original frame
     is not modified.
+
+    Robustness: some callers (e.g. FreqAI's feature-population probes) pass a
+    very short frame. The `ta` library's ATR/RSI crash with an IndexError on
+    fewer than ~15 rows, so for short inputs we return the frame with every
+    feature column present but NaN (warm-up rows would be NaN anyway).
     """
     out = df.copy()
+
+    if len(out) < 30:
+        for col in ALL_FEATURE_COLUMNS:
+            out[col] = np.nan
+        return out
+
     close = out["close"]
     high = out["high"]
     low = out["low"]
