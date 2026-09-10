@@ -110,19 +110,24 @@ eşiği → giriş sinyali. dry-run'da forward-test.
       — FreqAI probe'u `ta` ATR/RSI'ı çökertiyordu. 104 test geçer.
 - [x] `--freqaimodel XGBoostClassifier` ile backtest çalıştırıldı (4 coin,
       2024-01→2026-09, walk-forward). Hata yok, no-lookahead FreqAI garantisi.
-- [x] İlk sonuçlar + teşhis: `docs/freqai-notes.md`.
-      **Model edge'i gerçek** (`freqai_down` çıkışları +%27, %60 win) ama
-      strateji henüz net negatif (−%6.3 best); kayıp trade-yönetiminden
-      (sert stop + fee churn), model sinyalinden değil.
-- [ ] ATR bazlı `custom_stoploss`, `buy_proba` hyperopt (out-of-sample!),
-      `weight_factor` / `scale_pos_weight`, `label_period_candles` denemesi.
-      (Öncelik listesi: `docs/freqai-notes.md` "Sıradaki adımlar".)
+- [x] Tuning yapıldı (8 iterasyon, `docs/freqai-notes.md`): wide stop →
+      buy_proba 0.65 → time_stop `custom_exit` → **giriş trend filtresi
+      (model "up" VE EMA20>EMA50)**.
+- [x] **Backtest: −21.8% → +9.23%** (full 2024-2026), **in-sample +6.5% VE
+      OOS +2.8% ikisi de pozitif**, max DD %3.3. Trend filtresi 0 tuned
+      parametre → overfit değil.
+- [x] Hyperopt denendi → yine overfit (in-sample +15.5% / OOS −5.95%),
+      params atıldı. Ders: **yapısal değişiklik > parametre ayarı.**
 - [ ] Feature importance incele.
-- [ ] dry-run'da 1-2 hafta forward-test; tahmin dağılımı + gerçekleşen hit-rate.
+- [ ] **dry-run'da 1-2 hafta forward-test** (bir sonraki iş); tahmin dağılımı +
+      gerçekleşen hit-rate logla.
+- [ ] Kâr artışı: daha iyi target (regresyon/3-sınıf), çoklu `include_timeframes`,
+      pozisyon boyutlandırma, daha çok coin.
 
-**Çıkış kriteri:** FreqAI strateji dry-run'da **net pozitif** + out-of-sample
-dayanıklı (Aşama 2 hyperopt dersi: tek in-sample yetmez). Şu an: pipeline ✅,
-edge ✅, kârlılık ❌ (tuning sürüyor).
+**Çıkış kriteri:** pipeline ✅, edge ✅ (OOS'ta da), backtest net pozitif +
+OOS-dayanıklı ✅. Kalan: dry-run forward-test'te doğrula, sonra Aşama 4.
+Getiri düşük (OOS ~yıllık %2.8) — kâr için feature/target işi sürecek ama
+Aşama 4-5 (risk katmanı, testnet) paralel ilerleyebilir.
 
 ---
 

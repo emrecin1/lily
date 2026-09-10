@@ -155,6 +155,10 @@ class AiCryptoFreqAIStrategy(IStrategy):
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe = self.freqai.start(dataframe, metadata, self)
+        # Giris trend filtresi icin duz (model'e verilmeyen) EMA kolonlari.
+        feats = add_indicators(dataframe)
+        dataframe["ema20"] = feats["ema20"].to_numpy()
+        dataframe["ema50"] = feats["ema50"].to_numpy()
         return dataframe
 
     def custom_exit(
@@ -171,15 +175,19 @@ class AiCryptoFreqAIStrategy(IStrategy):
 
     def populate_entry_trend(self, df: DataFrame, metadata: dict) -> DataFrame:
         up_proba = df["up"] if "up" in df.columns else 0.0
+        # Trend filtresi: modelin dusus trendine alim yapmasini engelle.
+        # OOS'ta kayip, modelin yanildigi girislerin duse duse time_stop'a
+        # gitmesinden geliyordu — bunlarin cogu EMA20<EMA50 rejiminde.
         df.loc[
             (
                 (df["do_predict"] == 1)
                 & (df["&-trend"] == "up")
                 & (up_proba >= self.buy_proba.value)
+                & (df["ema20"] > df["ema50"])
                 & (df["volume"] > 0)
             ),
             ["enter_long", "enter_tag"],
-        ] = (1, "freqai_up")
+        ] = (1, "freqai_up_trend")
         return df
 
     def populate_exit_trend(self, df: DataFrame, metadata: dict) -> DataFrame:

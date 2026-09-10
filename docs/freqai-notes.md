@@ -41,14 +41,42 @@ olurdu). `ALL_FEATURE_COLUMNS` modül sabiti eklendi. V1 davranışı değişmez
 (V1 hep binlerce satırlık frame veriyor); `tests/test_phase2b_feature_parity.py`
 + 5 test + tüm 104 test geçer.
 
-## İlk backtest sonuçları — 4 coin, 2024-01 → 2026-09
+## Backtest tuning ilerlemesi — 4 coin, 2024-01 → 2026-09 (full)
 
 | # | Ayar | Toplam | İşlem | Win% | Max DD |
 |---|---|---|---|---|---|
 | 1 | buy_proba 0.55, stop **−8%**, trailing %20 | **−21.8%** | 1107 | 56.0 | 25.5% |
 | 2 | buy_proba 0.55, stop **−20%**, trailing kapalı | −10.7% | 983 | 58.4 | 18.8% |
-| 3 | buy_proba **0.62**, stop −20% | **−6.34%** | 713 | 59.5 | 13.9% |
+| 3 | buy_proba **0.62**, stop −20% | −6.34% | 713 | 59.5 | 13.9% |
 | 4 | + `DI_threshold=1.0` | −6.34% (**etkisiz** — hiçbir mum DI>1.0) | 713 | 59.5 | 13.9% |
+| 5 | + breakeven+trail `custom_stoploss` | **−22.1%** (kazananları kesti — GERİ ALINDI) | 739 | 59.1 | 23.4% |
+| 6 | + `custom_exit` time_stop, buy_proba **0.65** | −4.3% | 670 | 59.3 | 11.3% |
+| 7 | + hyperopt (buy/sell/roi/stoploss) | in-sample +15.5% / **OOS −5.95%** → **OVERFIT**, params atıldı | | | |
+| 8 | + **giriş trend filtresi** (model "up" **VE** EMA20>EMA50) | **+9.23%** | 287 | 61.0 | **3.27%** |
+
+### #8 — genelleyen ilk config (in-sample + OOS pozitif)
+
+Trend filtresi = tek yapısal koşul, **0 tuned parametre** → overfit edilemez.
+
+| Dönem | Getiri | İşlem | Win% | Max DD | Sharpe |
+|---|---|---|---|---|---|
+| In-sample 2024-01 → 2025-09 | **+6.46%** | 170 | 57.6 | 3.27% | 0.53 |
+| **OOS 2025-09 → 2026-09** | **+2.77%** | 117 | 65.8 | 2.74% | 0.51 |
+| Full 2024 → 2026 | **+9.23%** | 287 | 61.0 | 3.27% | 0.53 |
+
+Çıkış nedeni (full #8): `freqai_down` **+21.5%** (266, %65 win) · `roi` +1.5% ·
+`time_stop` **−13.8%** (20). Model "up" dediği ama düşüş trendindeki (EMA20<EMA50)
+girişleri elemek, OOS kaybını pozitife çevirdi.
+
+**Değerlendirme:** modest (OOS yıllık ~%2.8, düşük). Gerçek slippage/fee sonrası
+marjinal. AMA: tutarlı pozitif, çok düşük drawdown (%3), üzerine inşa edilecek
+sağlam bir baz. Kâr için daha iyi feature/target + pozisyon boyutlandırma gerek.
+
+### Overfit uyarısı (#7)
+
+FreqAI hyperopt de Aşama 2 gibi overfit etti: in-sample +15.5%, OOS −5.95%.
+Bulduğu `stoploss = −34.3%` yine arama uzayı kenarında ("stop yok" hilesi).
+**Yapısal değişiklik (trend filtresi) > parametre ayarı.**
 
 ### Kritik bulgu: modelin edge'i GERÇEK, kayıp trade yönetiminden
 
@@ -91,8 +119,13 @@ olurdu). `ALL_FEATURE_COLUMNS` modül sabiti eklendi. V1 davranışı değişmez
 ## Durum
 
 - ✅ FreqAI pipeline uçtan uca çalışıyor, walk-forward, hata yok.
-- ✅ Model ölçülebilir bir edge'e sahip (`freqai_down` +%27, %60 win).
-- ⚠️ Strateji henüz net negatif (−%6.3); kayıp trade-yönetiminden, model
-  sinyalinden değil. Yukarıdaki 8 kalemle pozitife çekilmeli.
-- Gerçek paraya **çok var** — önce bu strateji dry-run'da net pozitif +
-  out-of-sample dayanıklı olmalı (Aşama 4-5).
+- ✅ Model ölçülebilir, **OOS'ta da kalıcı** bir edge'e sahip
+  (`freqai_down` in-sample +13% / OOS +8%, %65-70 win).
+- ✅ **Strateji artık net pozitif ve genelliyor** (#8): in-sample +6.5%,
+  OOS +2.8%, full +9.2%, max DD %3.3. Yapısal filtre ile, overfit'siz.
+- ⚠️ Getiri düşük; gerçek fee/slippage sonrası marjinal. Kâr için sonraki iş:
+  daha iyi target (regresyon / 3-sınıf), ek feature (`include_timeframes`
+  çoklu, funding, orderbook), pozisyon boyutlandırma, daha çok coin.
+- Sıra: **dry-run forward-test** (Aşama 3 çıkış kriteri) — canlı public veriyle
+  1-2 hafta, tahmin dağılımı + gerçekleşen hit-rate logla. Sonra Aşama 4.
+- Gerçek paraya hâlâ var: dry-run net pozitif + Aşama 4-5 merdiveni.
