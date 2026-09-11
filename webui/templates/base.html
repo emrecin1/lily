@@ -16,6 +16,7 @@
       <a href="/trades" class="{{ 'active' if active == 'trades' }}">İşlemler</a>
       <a href="/system" class="{{ 'active' if active == 'system' }}">Sistem</a>
     </nav>
+    <span class="live-dot {{ 'on' if live.ws_connected }}" title="{{ 'Canlı akış bağlı' if live.ws_connected else 'Canlı akış kopuk' }}"></span>
   </div>
   <div class="container">
     {% if not live.connected %}
@@ -23,5 +24,6 @@
     {% endif %}
     {% block content %}{% endblock %}
   </div>
+  <script src="/static/js/live.js"></script>
 </body>
 </html>

@@ -47,22 +47,46 @@
   });
   ema50Series.setData(data.ema50 || []);
 
-  if (data.prob && data.prob.length) {
-    const probSeries = chart.addAreaSeries({
-      priceScaleId: "prob",
-      topColor: "rgba(46, 204, 113, 0.35)",
-      bottomColor: "rgba(46, 204, 113, 0.02)",
-      lineColor: "#2ecc71",
-      lineWidth: 1,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    });
-    chart.priceScale("prob").applyOptions({
-      scaleMargins: { top: 0.75, bottom: 0 },
-      borderVisible: false,
-    });
-    probSeries.setData(data.prob);
-  }
+  const probSeries = chart.addAreaSeries({
+    priceScaleId: "prob",
+    topColor: "rgba(46, 204, 113, 0.35)",
+    bottomColor: "rgba(46, 204, 113, 0.02)",
+    lineColor: "#2ecc71",
+    lineWidth: 1,
+    priceLineVisible: false,
+    lastValueVisible: true,
+  });
+  chart.priceScale("prob").applyOptions({
+    scaleMargins: { top: 0.75, bottom: 0 },
+    borderVisible: false,
+  });
+  probSeries.setData(data.prob || []);
 
   chart.timeScale().fitContent();
+
+  // ---- Faz 3: canli guncelleme --------------------------------------
+  // Ayni pariteyle ilgili bir SSE olayi gelince /pairs/<pair>/data.json'i
+  // yeniden cek ve tum serileri tazele. Artimsal .update() yerine tam
+  // setData(): 4h mumda gozle fark edilmez, cok daha az hata payi.
+  const pair = container.dataset.pair;
+  const dataUrl = container.dataset.url;
+  if (pair && dataUrl) {
+    document.addEventListener("webui:event", function (e) {
+      const ev = e.detail || {};
+      const relevant = ["new_candle", "entry", "entry_fill", "entry_cancel", "exit", "exit_fill", "exit_cancel"];
+      if (relevant.indexOf(ev.type) === -1) return;
+      if (ev.pair && ev.pair !== pair) return; // baska pariteyle ilgiliyse atla
+      fetch(dataUrl)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (fresh) {
+          if (!fresh || fresh.error) return;
+          candleSeries.setData(fresh.candles || []);
+          candleSeries.setMarkers(fresh.markers || []);
+          ema20Series.setData(fresh.ema20 || []);
+          ema50Series.setData(fresh.ema50 || []);
+          probSeries.setData(fresh.prob || []);
+        })
+        .catch(function () {});
+    });
+  }
 })();

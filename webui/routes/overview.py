@@ -1,4 +1,8 @@
-"""/overview — bakiye, bugun/hafta/ay PnL, acik islem kartlari, gunluk-kayip pili."""
+"""/overview — bakiye, bugun/hafta/ay PnL, acik islem kartlari, gunluk-kayip pili.
+
+/overview/fragment: ayni icerik, sadece ic HTML (base layout yok) — Faz 3'te
+canli guncelleme icin static/js/live.js bunu SSE olaylarinda yeniden cekip
+#overview-content'i degistirir."""
 
 from __future__ import annotations
 
@@ -6,7 +10,7 @@ import asyncio
 import logging
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from webui.auth import require_login
 from webui.config import get_settings
@@ -20,17 +24,10 @@ router = APIRouter()
 
 @router.get("/", include_in_schema=False)
 async def root() -> HTMLResponse:
-    from fastapi.responses import RedirectResponse
-
     return RedirectResponse(url="/overview", status_code=303)
 
 
-@router.get("/overview")
-async def overview(request: Request):
-    guard = require_login(request)
-    if guard:
-        return guard
-
+async def _build_overview_context() -> dict:
     client = get_client()
     settings = get_settings()
 
@@ -78,26 +75,38 @@ async def overview(request: Request):
         }
 
     stake_currency = (daily or weekly or monthly or {}).get("stake_currency", "USDT")
-
     trades_view = [_normalize_open_trade(t) for t in (open_trades or [])]
 
-    return templates.TemplateResponse(
-        request,
-        "overview.html",
-        {
-            "active": "overview",
-            "connected": error is None,
-            "last_error": error,
-            "stake_currency": stake_currency,
-            "balance": balance,
-            "profit": profit,
-            "today": _period(daily),
-            "week": _period(weekly),
-            "month": _period(monthly),
-            "guard": guard,
-            "open_trades": trades_view,
-        },
-    )
+    return {
+        "active": "overview",
+        "stake_currency": stake_currency,
+        "balance": balance,
+        "profit": profit,
+        "today": _period(daily),
+        "week": _period(weekly),
+        "month": _period(monthly),
+        "guard": guard,
+        "open_trades": trades_view,
+        "error": error,
+    }
+
+
+@router.get("/overview")
+async def overview(request: Request):
+    guard = require_login(request)
+    if guard:
+        return guard
+    ctx = await _build_overview_context()
+    return templates.TemplateResponse(request, "overview.html", ctx)
+
+
+@router.get("/overview/fragment", include_in_schema=False)
+async def overview_fragment(request: Request):
+    guard = require_login(request)
+    if guard:
+        return guard
+    ctx = await _build_overview_context()
+    return templates.TemplateResponse(request, "partials/overview_fragment.html", ctx)
 
 
 def _normalize_open_trade(t: dict) -> dict:

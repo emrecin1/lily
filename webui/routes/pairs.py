@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from webui.auth import require_login
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
@@ -139,19 +139,14 @@ async def pairs_index(request: Request):
     return RedirectResponse(url=f"/pairs/{pairs[0]}" if pairs else "/overview")
 
 
-@router.get("/pairs/{pair:path}")
-async def pair_chart(request: Request, pair: str):
-    guard = require_login(request)
-    if guard:
-        return guard
-
+async def _fetch_chart_data(pair: str) -> tuple[dict, list[str], str, str | None]:
+    """Donen: (chart_data (latest dahil), whitelist, timeframe, hata)."""
     client = get_client()
-    error: str | None = None
     whitelist: list[str] = []
     timeframe = "4h"
-    chart_data = {"candles": [], "ema20": [], "ema50": [], "prob": [], "markers": []}
-    latest = None
-
+    chart_data = {
+        "candles": [], "ema20": [], "ema50": [], "prob": [], "markers": [], "latest": None,
+    }
     try:
         wl, cfg = await asyncio.gather(client.whitelist(), client.show_config())
         whitelist = wl.get("whitelist", [])
@@ -163,10 +158,34 @@ async def pair_chart(request: Request, pair: str):
             client.status(),
         )
         chart_data = _build_chart_payload(raw, trades, status, pair)
-        latest = chart_data.pop("latest", None)
+        return chart_data, whitelist, timeframe, None
     except FreqtradeUnavailable as exc:
-        error = str(exc)
-        logger.warning("pair_chart(%s): %s", pair, exc)
+        logger.warning("chart_data(%s): %s", pair, exc)
+        return chart_data, whitelist, timeframe, str(exc)
+
+
+@router.get("/pairs/{pair:path}/data.json", include_in_schema=False)
+async def pair_chart_data(request: Request, pair: str):
+    """Faz 3: static/js/live.js SSE'de ilgili paritede olay gorunce bunu
+    cekip lightweight-charts'i yeniden besler (tam veri; artimsal update
+    yerine — 4h mumda fark edilmez, cok daha az hata payi)."""
+    guard = require_login(request)
+    if guard:
+        return guard
+    chart_data, _whitelist, _tf, error = await _fetch_chart_data(pair)
+    if error:
+        return JSONResponse({"error": error}, status_code=503)
+    return JSONResponse(chart_data)
+
+
+@router.get("/pairs/{pair:path}")
+async def pair_chart(request: Request, pair: str):
+    guard = require_login(request)
+    if guard:
+        return guard
+
+    chart_data, whitelist, timeframe, error = await _fetch_chart_data(pair)
+    latest = chart_data.pop("latest", None)
 
     return templates.TemplateResponse(
         request,

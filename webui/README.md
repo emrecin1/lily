@@ -44,7 +44,13 @@ Freqtrade zaten çalışıyor olmalı (`:8081`, `api_server.enabled: true`):
   işaretleri (`/pair_candles` + `/trades` + `/status`) + FreqAI P(up)
   alt-paneli (lightweight-charts, CDN) + "model — neden bu durum" kartları
   (do_predict, P(up), trend, son mum). Henüz canlı değil, sayfa yenileme ile.
-- ⏳ Faz 3 — canlı güncelleme (Freqtrade WS köprüsü → tarayıcıya SSE).
+- ✅ Faz 3 — canlı güncelleme: `webui/ws_bridge.py` Freqtrade'in
+  `/api/v1/message/ws`'ine bağlanır (reconnect + exponential backoff),
+  olayları `/events` (SSE) ile tarayıcıya dağıtır. `/overview` açık-işlem
+  ve PnL kartlarını, `/pairs/{pair}` grafiği ilgili olaylarda (trade
+  giriş/çıkış, yeni mum) sayfa yenilemeden tazeler (tam veri REST'ten
+  yeniden çekilir — artımsal update değil, 4h mumda gereksiz). Topbar'da
+  yeşil nokta = canlı akış bağlı.
 - ⏳ Faz 4 — `/trades`, `/system` sayfaları.
 - ⏳ Faz 5 (opsiyonel) — docker-compose'a ikinci servis.
 
