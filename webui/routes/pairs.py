@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from webui.auth import require_login
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
 from webui.templating import templates
+from webui.timeutil import iso_to_local_str
 
 logger = logging.getLogger("webui.routes.pairs")
 
@@ -74,7 +75,7 @@ def _build_chart_payload(raw: dict, trades: dict, status: list[dict], pair: str)
         last = rows[-1]
         e20, e50 = g(last, "ema20"), g(last, "ema50")
         latest = {
-            "date": g(last, "date"),
+            "date": iso_to_local_str(g(last, "date")),
             "do_predict": g(last, "do_predict", 0),
             "up": g(last, "up"),
             "down": g(last, "down"),

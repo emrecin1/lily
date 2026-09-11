@@ -12,6 +12,7 @@ from webui.auth import require_login
 from webui.config import get_freqai_info
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
 from webui.templating import templates
+from webui.timeutil import epoch_to_local_str
 
 logger = logging.getLogger("webui.routes.system")
 
@@ -50,20 +51,19 @@ async def system_page(request: Request):
 
     freqai = get_freqai_info()
     freqai["last_trained_rel"] = _relative(freqai.get("last_trained"))
-    if freqai.get("last_trained"):
-        freqai["last_trained_abs"] = datetime.fromtimestamp(
-            freqai["last_trained"], tz=UTC
-        ).strftime("%Y-%m-%d %H:%M UTC")
-    else:
-        freqai["last_trained_abs"] = "—"
+    # Yerel saat (bkz. webui/timeutil.py) — Freqtrade/FreqAI dahili olarak UTC
+    # kullanir; ham UTC gostermek "az once" ile saat degeri arasinda
+    # (UTC+ofset kadar) yaniltici bir tutarsizlik izlenimi veriyordu.
+    freqai["last_trained_abs"] = epoch_to_local_str(freqai.get("last_trained"))
 
     log_rows = []
     if logs and logs.get("logs"):
         for row in reversed(logs["logs"]):  # en yeni en ustte
-            # [timestamp_str, timestamp_ms, logger_name, level, message]
-            ts, _ms, logger_name, level, message = (row + [None] * 5)[:5]
+            # [timestamp_str(UTC), timestamp_ms, logger_name, level, message]
+            _ts_utc, ms, logger_name, level, message = (row + [None] * 5)[:5]
+            ts_local = epoch_to_local_str(ms / 1000, "%Y-%m-%d %H:%M:%S") if ms else "—"
             log_rows.append(
-                {"ts": ts, "logger": logger_name, "level": level, "message": message}
+                {"ts": ts_local, "logger": logger_name, "level": level, "message": message}
             )
 
     return templates.TemplateResponse(

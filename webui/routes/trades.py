@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from webui.auth import require_login
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
 from webui.templating import templates
+from webui.timeutil import iso_to_local_str
 
 logger = logging.getLogger("webui.routes.trades")
 
@@ -27,8 +28,8 @@ def _normalize_trade(t: dict) -> dict:
     is_open = bool(t.get("is_open"))
     return {
         "pair": t.get("pair", "?"),
-        "open_date": (t.get("open_date") or "")[:16].replace("T", " "),
-        "close_date": (t.get("close_date") or "")[:16].replace("T", " ") if t.get("close_date") else "—",
+        "open_date": iso_to_local_str(t.get("open_date")),
+        "close_date": iso_to_local_str(t.get("close_date")),
         "open_rate": t.get("open_rate"),
         "close_rate": t.get("close_rate"),
         "amount": t.get("amount"),

@@ -3,7 +3,7 @@
 {% block page_title %}İşlemler{% endblock %}
 {% block content %}
 
-<div class="section-label">İşlem Geçmişi ({{ total }})</div>
+<div class="section-label">İşlem Geçmişi ({{ total }}) <span style="text-transform:none; font-weight:400; color:var(--text-faint);">— saatler yerel</span></div>
 
 {% if error %}
 <div class="empty-state">İşlemler alınamadı: {{ error }}</div>

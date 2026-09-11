@@ -16,6 +16,7 @@ from webui.auth import require_login
 from webui.config import get_settings
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
 from webui.templating import templates
+from webui.timeutil import iso_to_local_str
 
 logger = logging.getLogger("webui.routes.overview")
 
@@ -124,6 +125,6 @@ def _normalize_open_trade(t: dict) -> dict:
         "profit_ratio": profit_ratio,
         "profit_abs": t.get("current_profit_abs", t.get("profit_abs")),
         "enter_tag": t.get("enter_tag") or "—",
-        "open_date": (t.get("open_date") or "")[:16].replace("T", " "),
+        "open_date": iso_to_local_str(t.get("open_date")),
         "stop_loss_ratio": t.get("stop_loss_ratio"),
     }

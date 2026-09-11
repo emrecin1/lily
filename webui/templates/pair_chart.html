@@ -36,7 +36,7 @@
   </div>
   <div class="stat-card">
     <div class="label">Son mum</div>
-    <div class="value mono" style="font-size:14px;">{{ (latest.date or '—')[:16].replace('T', ' ') if latest else '—' }}</div>
+    <div class="value mono" style="font-size:14px;">{{ latest.date if latest else '—' }}</div>
   </div>
 </div>
 
