@@ -239,6 +239,7 @@ a { color: inherit; text-decoration: none; }
 .tag.exit-time_stop { background: var(--red-soft); color: var(--red); border-color: rgba(229,72,77,0.3); }
 .tag.exit-roi { background: var(--green-soft); color: var(--green); border-color: rgba(46,204,113,0.3); }
 .tag.exit-stop_loss { background: var(--red-soft); color: var(--red); border-color: rgba(229,72,77,0.3); }
+.tag.exit-open { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
 
 .empty-state {
   color: var(--text-faint);

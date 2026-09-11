@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}İşlemler — ai-crypto-bot{% endblock %}
+{% block content %}
+
+<div class="section-label">İşlem Geçmişi ({{ total }})</div>
+
+{% if error %}
+<div class="empty-state">İşlemler alınamadı: {{ error }}</div>
+{% elif not rows %}
+<div class="empty-state">Henüz işlem yok.</div>
+{% else %}
+<div style="overflow-x:auto;">
+<table class="data">
+  <thead>
+    <tr>
+      <th>Parite</th>
+      <th>Giriş</th>
+      <th>Çıkış</th>
+      <th class="num">Miktar</th>
+      <th class="num">Giriş Fiyatı</th>
+      <th class="num">Çıkış Fiyatı</th>
+      <th class="num">PnL</th>
+      <th>Giriş Etiketi</th>
+      <th>Çıkış Nedeni</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in rows %}
+    <tr>
+      <td>{{ t.pair }}</td>
+      <td class="mono">{{ t.open_date }}</td>
+      <td class="mono">{{ t.close_date }}</td>
+      <td class="num">{{ t.amount | num(6) if t.amount else '—' }}</td>
+      <td class="num">{{ t.open_rate | num(4) if t.open_rate else '—' }}</td>
+      <td class="num">{{ t.close_rate | num(4) if t.close_rate else '—' }}</td>
+      <td class="num {{ 'pos' if t.profit_ratio and t.profit_ratio > 0 else 'neg' if t.profit_ratio and t.profit_ratio < 0 }}">
+        {{ t.profit_ratio | pct if t.profit_ratio is not none else '—' }}
+      </td>
+      <td><span class="tag">{{ t.enter_tag }}</span></td>
+      <td><span class="tag exit-{{ t.exit_reason_class }}">{{ t.exit_reason }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if total_pages > 1 %}
+<div style="display:flex; gap:8px; margin-top:16px; align-items:center; font-size:13px; color:var(--text-dim);">
+  {% if page > 1 %}<a href="/trades?page={{ page - 1 }}" class="pill" style="border-color:var(--border); background:var(--card);">‹ Önceki</a>{% endif %}
+  <span>Sayfa {{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}<a href="/trades?page={{ page + 1 }}" class="pill" style="border-color:var(--border); background:var(--card);">Sonraki ›</a>{% endif %}
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}

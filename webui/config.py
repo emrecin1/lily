@@ -103,3 +103,33 @@ def get_freqtrade_creds() -> FreqtradeCreds:
         password=api.get("password", ""),
         ws_token=api.get("ws_token", ""),
     )
+
+
+def get_freqai_info() -> dict:
+    """FreqAI identifier + son egitim zamani. Freqtrade REST API'sinin bunu
+    veren bir endpoint'i yok; ayni host/volume'de oldugumuz icin dogrudan
+    config/config.freqai.json + user_data/models/<identifier>/ dizin
+    mtime'larindan okuyoruz (bkz. docs/freqai-notes.md)."""
+    freqai_cfg_path = Path(
+        os.getenv("FREQAI_CONFIG_PATH", str(REPO_ROOT / "config" / "config.freqai.json"))
+    )
+    identifier = None
+    if freqai_cfg_path.exists():
+        try:
+            with open(freqai_cfg_path) as f:
+                identifier = json.load(f).get("freqai", {}).get("identifier")
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    last_trained = None
+    model_count = 0
+    if identifier:
+        model_dir = REPO_ROOT / "user_data" / "models" / identifier
+        if model_dir.is_dir():
+            sub_dirs = [d for d in model_dir.iterdir() if d.is_dir()]
+            model_count = len(sub_dirs)
+            if sub_dirs:
+                newest = max(sub_dirs, key=lambda d: d.stat().st_mtime)
+                last_trained = newest.stat().st_mtime
+
+    return {"identifier": identifier, "last_trained": last_trained, "model_count": model_count}

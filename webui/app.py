@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from webui import auth
 from webui.config import BASE_DIR, get_freqtrade_creds, get_settings
 from webui.freqtrade_client import init_client
-from webui.routes import events, overview, pairs
+from webui.routes import events, overview, pairs, system, trades
 from webui.state import poll_connectivity
 from webui.ws_bridge import run_ws_bridge
 
@@ -57,6 +57,8 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 app.include_router(auth.router)
 app.include_router(overview.router)
 app.include_router(pairs.router)
+app.include_router(trades.router)
+app.include_router(system.router)
 app.include_router(events.router)
 
 

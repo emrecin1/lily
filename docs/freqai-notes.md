@@ -155,3 +155,19 @@ tek başına yetmediğini kabul edip veri kaynağı genişletmek.
 - Sıra: **dry-run forward-test** (Aşama 3 çıkış kriteri) — canlı public veriyle
   1-2 hafta, tahmin dağılımı + gerçekleşen hit-rate logla. Sonra Aşama 4.
 - Gerçek paraya hâlâ var: dry-run net pozitif + Aşama 4-5 merdiveni.
+
+## Gözlenen ara sıra hata: `KeyError: 'labels_std'` (dry-run, canlı)
+
+`webui/`'nin `/system` log sayfası üzerinden fark edildi: `XGBoostClassifier.
+predict()` bazen `dk.data["labels_std"]` bulamayıp `KeyError` atıyor
+(`freqtrade.strategy.strategy_wrapper` tarafından yakalanıp ERROR olarak
+loglanıyor — **bot çökmüyor**, o mumda ilgili parite için analiz/tahmin o
+döngüde atlanıyor, bir sonraki döngüde normale dönüyor). Walk-forward retrain
+sonrası modelin `dk.data` icindeki metadata'sı henuz tam yuklenmeden bir
+tahmin cagrisi gelirse olusuyor gibi gorunuyor (FreqAI'nin retrain/swap
+sirasindaki bir yarisma durumu olabilir). Siniflandirici oldugumuz icin
+`labels_std` degerleri zaten `{"down":0,"up":0}` — kritik bilgi kaybi yok,
+ama sik olursa (özellikle retrain'in hemen ardindan gelen mum) o
+dongude sinyal kacirilmis olabilir. Izlemeye deger; siklik artarsa
+`train_period_days`/`backtest_period_days` ayarlarini gozden gecir veya
+upstream Freqtrade/FreqAI issue'larina bak.

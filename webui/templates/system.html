@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Sistem — ai-crypto-bot{% endblock %}
+{% block content %}
+
+{% if error %}
+<div class="empty-state">Bot durumu alınamadı: {{ error }}</div>
+{% endif %}
+
+<div class="section-label">Bot</div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">Durum</div>
+    <div class="value {{ 'pos' if cfg and cfg.state == 'running' }}" style="font-size:16px;">
+      {% if cfg %}{{ cfg.state }}{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Strateji</div>
+    <div class="value" style="font-size:16px;">{{ cfg.strategy if cfg else '—' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Mod</div>
+    <div class="value" style="font-size:16px;">
+      {% if cfg %}{{ 'DRY-RUN' if cfg.dry_run else 'CANLI' }}{% else %}—{% endif %}
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Freqtrade</div>
+    <div class="value mono" style="font-size:16px;">{{ cfg.version if cfg else '—' }}</div>
+  </div>
+</div>
+
+<div class="stat-grid" style="margin-top:12px;">
+  <div class="stat-card">
+    <div class="label">Borsa</div>
+    <div class="value" style="font-size:16px;">{{ cfg.exchange if cfg else '—' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Zaman Dilimi</div>
+    <div class="value mono" style="font-size:16px;">{{ cfg.timeframe if cfg else '—' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Maks. Açık İşlem</div>
+    <div class="value">{{ cfg.max_open_trades | int if cfg else '—' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Stake</div>
+    <div class="value mono" style="font-size:15px;">{{ cfg.stake_amount if cfg else '—' }} {{ cfg.stake_currency if cfg else '' }}</div>
+  </div>
+</div>
+
+<div class="section-label">FreqAI Modeli</div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">Identifier</div>
+    <div class="value mono" style="font-size:14px;">{{ freqai.identifier or '—' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Son Eğitim</div>
+    <div class="value" style="font-size:15px;">{{ freqai.last_trained_rel }}</div>
+    <div style="font-size:11px; color:var(--text-faint); margin-top:4px;">{{ freqai.last_trained_abs }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Model Sayısı (walk-forward)</div>
+    <div class="value">{{ freqai.model_count }}</div>
+  </div>
+</div>
+
+<div class="section-label">Sunucu</div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">CPU (ort.)</div>
+    <div class="value">{% if sysinfo %}{{ sysinfo.cpu_avg | num(1) }}%{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">RAM</div>
+    <div class="value">{% if sysinfo %}{{ sysinfo.ram_pct | num(1) }}%{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">CPU Çekirdek</div>
+    <div class="value">{{ sysinfo.cpu_count if sysinfo else '—' }}</div>
+  </div>
+</div>
+
+<div class="section-label">Son Loglar ({{ log_rows | length }})</div>
+{% if log_rows %}
+<div style="max-height:420px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--card);">
+  <table class="data" style="font-size:12px;">
+    <tbody>
+      {% for row in log_rows %}
+      <tr>
+        <td class="mono" style="white-space:nowrap; color:var(--text-faint);">{{ row.ts }}</td>
+        <td style="white-space:nowrap;">
+          <span class="pill {{ 'halt' if row.level in ('ERROR','CRITICAL') else 'warn' if row.level == 'WARNING' else '' }}" style="{{ 'border-color:var(--border); color:var(--text-faint); background:transparent; padding:2px 8px;' if row.level not in ('ERROR','CRITICAL','WARNING') }}">{{ row.level }}</span>
+        </td>
+        <td style="color:var(--text-faint); white-space:nowrap;">{{ row.logger }}</td>
+        <td>{{ row.message }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">Log yok.</div>
+{% endif %}
+
+{% endblock %}

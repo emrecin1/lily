@@ -51,8 +51,13 @@ Freqtrade zaten çalışıyor olmalı (`:8081`, `api_server.enabled: true`):
   giriş/çıkış, yeni mum) sayfa yenilemeden tazeler (tam veri REST'ten
   yeniden çekilir — artımsal update değil, 4h mumda gereksiz). Topbar'da
   yeşil nokta = canlı akış bağlı.
-- ⏳ Faz 4 — `/trades`, `/system` sayfaları.
+- ✅ Faz 4 — `/trades` (sayfalanmış geçmiş, giriş/çıkış tag chip'leri) +
+  `/system` (bot durumu, FreqAI identifier + son eğitim zamanı — `config/
+  config.freqai.json` + `user_data/models/<id>/` dizin mtime'larından,
+  CPU/RAM, renkli log görüntüleyici).
 - ⏳ Faz 5 (opsiyonel) — docker-compose'a ikinci servis.
+
+**Tüm ana fazlar (1-4) tamam.** Panel FreqUI'nin yerini alacak durumda.
 
 ## Bilinen kısıtlar
 
