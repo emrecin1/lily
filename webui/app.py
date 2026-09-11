@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from webui import auth
 from webui.config import BASE_DIR, get_freqtrade_creds, get_settings
 from webui.freqtrade_client import init_client
-from webui.routes import overview
+from webui.routes import overview, pairs
 from webui.state import poll_connectivity
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)s: %(message)s")
@@ -52,6 +52,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 app.include_router(auth.router)
 app.include_router(overview.router)
+app.include_router(pairs.router)
 
 
 @app.get("/healthz", include_in_schema=False)

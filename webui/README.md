@@ -40,7 +40,10 @@ Freqtrade zaten çalışıyor olmalı (`:8081`, `api_server.enabled: true`):
 
 - ✅ Faz 1 — BFF iskeleti, login, `/overview` (bakiye, bugün/hafta/ay PnL,
   açık işlem kartları, günlük-kayıp pili, bot-unreachable banner).
-- ⏳ Faz 2 — `/pairs/{pair}` grafik sayfası (lightweight-charts).
+- ✅ Faz 2 — `/pairs/{pair}` grafik sayfası: mum + EMA20/EMA50 + trade
+  işaretleri (`/pair_candles` + `/trades` + `/status`) + FreqAI P(up)
+  alt-paneli (lightweight-charts, CDN) + "model — neden bu durum" kartları
+  (do_predict, P(up), trend, son mum). Henüz canlı değil, sayfa yenileme ile.
 - ⏳ Faz 3 — canlı güncelleme (Freqtrade WS köprüsü → tarayıcıya SSE).
 - ⏳ Faz 4 — `/trades`, `/system` sayfaları.
 - ⏳ Faz 5 (opsiyonel) — docker-compose'a ikinci servis.
