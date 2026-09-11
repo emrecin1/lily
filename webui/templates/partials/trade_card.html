@@ -1,0 +1,16 @@
+<div class="trade-card">
+  <div class="row1">
+    <div><span class="pair">{{ t.pair }}</span><span class="side">long</span></div>
+    <div class="pnl {{ 'pos' if t.profit_ratio and t.profit_ratio > 0 else 'neg' if t.profit_ratio and t.profit_ratio < 0 }}">
+      {{ t.profit_ratio | pct }}
+    </div>
+  </div>
+  <div class="meta">
+    <span>giriş <span class="mono">{{ t.open_rate | num(4) }}</span></span>
+    <span>şimdi <span class="mono">{{ t.current_rate | num(4) if t.current_rate else '—' }}</span></span>
+  </div>
+  <div class="meta">
+    <span>{{ t.open_date }}</span>
+    <span class="tag">{{ t.enter_tag }}</span>
+  </div>
+</div>

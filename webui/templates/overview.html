@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Özet — ai-crypto-bot{% endblock %}
+{% block content %}
+
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+  <div style="color:var(--text-dim); font-size:13px;">
+    {% if balance %}Bakiye: <span class="mono">{{ balance.total | num(2) }} {{ balance.stake }}</span>{% endif %}
+  </div>
+  {% include "partials/guard_pill.html" %}
+</div>
+
+<div class="section-label">Bugün / Hafta / Ay</div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">Bugün</div>
+    <div class="value {{ 'pos' if today.abs_profit and today.abs_profit > 0 else 'neg' if today.abs_profit and today.abs_profit < 0 }}">{{ today.rel_profit | pct }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Bu Hafta</div>
+    <div class="value {{ 'pos' if week.abs_profit and week.abs_profit > 0 else 'neg' if week.abs_profit and week.abs_profit < 0 }}">{{ week.rel_profit | pct }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Bu Ay</div>
+    <div class="value {{ 'pos' if month.abs_profit and month.abs_profit > 0 else 'neg' if month.abs_profit and month.abs_profit < 0 }}">{{ month.rel_profit | pct }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Toplam Kâr (all-time)</div>
+    <div class="value {{ 'pos' if profit and profit.profit_all_percent and profit.profit_all_percent > 0 else 'neg' if profit and profit.profit_all_percent and profit.profit_all_percent < 0 }}">
+      {% if profit %}{{ (profit.profit_all_percent / 100) | pct }}{% else %}—{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Performans</div>
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">Win Rate</div>
+    <div class="value">{% if profit %}{{ (profit.winrate) | pct(1) }}{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Max Drawdown</div>
+    <div class="value neg">{% if profit %}{{ (profit.max_drawdown) | pct(1) }}{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">İşlem Sayısı</div>
+    <div class="value">{% if profit %}{{ profit.trade_count }}{% else %}—{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Profit Factor</div>
+    <div class="value">{% if profit and profit.profit_factor %}{{ profit.profit_factor | num(2) }}{% else %}—{% endif %}</div>
+  </div>
+</div>
+
+<div class="section-label">Açık İşlemler ({{ open_trades | length }})</div>
+{% if open_trades %}
+<div class="trade-grid">
+  {% for t in open_trades %}
+    {% include "partials/trade_card.html" %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">Açık işlem yok — model uygun sinyal bekliyor.</div>
+{% endif %}
+
+{% endblock %}

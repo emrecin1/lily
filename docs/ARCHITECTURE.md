@@ -102,12 +102,22 @@ Freqtrade tek süreç olarak bu akışı yönetir; kavramsal katmanlar şöyle:
      ┌────────────────┐  ┌──────────────────┐  ┌────────────────┐
      │ Persistence     │  │ Control Plane     │  │ Observability   │
      │ SQLite: trades, │  │ Telegram bot      │  │ - JSON loglar   │
-     │ orders, pairlock│  │ FreqUI (web)      │  │ - /api_server   │
-     │ user_data/      │  │ REST API          │  │ - Prometheus*   │
-     └────────────────┘  └──────────────────┘  │ - Sentry*       │
-                                                └────────────────┘
+     │ orders, pairlock│  │ webui/ (birincil) │  │ - /api_server   │
+     │ user_data/      │  │ FreqUI (admin)    │  │ - Prometheus*   │
+     └────────────────┘  │ REST API          │  │ - Sentry*       │
+                          └──────────────────┘  └────────────────┘
                           * opsiyonel eklenti (bkz. §7)
 ```
+
+**`webui/`** — Freqtrade'in stok arayüzü (FreqUI) tamamen sabit, önceden
+derlenmiş bir Vue SPA; hiçbir tema/marka noktası yok. Onun yerine günlük
+kullanılan **özel bir panel** (`webui/`, FastAPI+Jinja2+HTMX, ayrı bir port —
+`:8082`) Freqtrade'in REST/WS API'sine (`:8081`) salt-okunur bağlanır;
+FreqUI admin/kontrol işleri için arka planda kurulu kalır. Ayrıntı: panelin
+kendi tasarım kararları için plan dosyasına veya `webui/` içindeki modül
+docstring'lerine bakın (kontrol aksiyonu YOK — start/stop/forceexit FreqUI/
+Telegram/`scripts/kill.sh`'te kalır, salt-okunur panelin blast-radius'u
+düşük tutulur).
 
 ### Ayrı tutulan: Araştırma / ML eğitim track'i (offline)
 
@@ -154,6 +164,9 @@ ai-crypto-bot/
 │  ├─ backtest_results/      # (gitignore)
 │  ├─ logs/                  # (gitignore)
 │  └─ notebooks/
+├─ webui/                    # ozel panel (FreqUI'nin yerine gecen BFF, :8082)
+│  ├─ app.py  config.py  freqtrade_client.py  state.py  auth.py  ws_bridge.py
+│  ├─ routes/  templates/  static/
 ├─ src/                      # V1 pipeline — araştırma/referans (korunuyor)
 ├─ tests/                    # V1 testleri + yeni strateji testleri
 └─ scripts/
@@ -164,7 +177,8 @@ ai-crypto-bot/
 Ne tracked, ne gitignore:
 
 - **Tracked:** `config/*.example.json`, `config/config.dry.json`,
-  `user_data/strategies/`, `user_data/freqaimodels/`, `docs/`, `src/`, `tests/`.
+  `user_data/strategies/`, `user_data/freqaimodels/`, `docs/`, `src/`, `tests/`,
+  `webui/`.
 - **Gitignore:** gerçek `config.testnet.json` / `config.live.json` (key içerir),
   `.env`, `user_data/{models,data,logs,backtest_results}`, `*.sqlite`.
 

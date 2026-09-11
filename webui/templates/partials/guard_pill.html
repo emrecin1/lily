@@ -1,0 +1,11 @@
+{% if guard is none %}
+  <span class="pill warn"><span class="dot"></span> Durum bilinmiyor</span>
+{% elif guard.halted %}
+  <span class="pill halt" title="Bugünkü kayıp {{ guard.pct | pct(1) }} limitini aştı — yeni giriş engellendi">
+    <span class="dot"></span> DURDURULDU — günlük limit aşıldı
+  </span>
+{% else %}
+  <span class="pill ok" title="Bugün: {{ guard.today_pnl | num(2) }} {{ stake_currency }} / limit: {{ guard.limit | num(2) }}">
+    <span class="dot"></span> OK — günlük limit içinde
+  </span>
+{% endif %}
