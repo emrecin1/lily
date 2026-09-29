@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from webui.auth import require_login
 from webui.freqtrade_client import FreqtradeUnavailable, get_client
 from webui.templating import templates
-from webui.timeutil import iso_to_local_str
+from webui.timeutil import epoch_to_local_str, iso_to_local_str, timeframe_to_seconds
 
 logger = logging.getLogger("webui.routes.pairs")
 
@@ -46,7 +46,9 @@ def _row_getter(columns: list[str]):
     return get
 
 
-def _build_chart_payload(raw: dict, trades: dict, status: list[dict], pair: str) -> dict:
+def _build_chart_payload(
+    raw: dict, trades: dict, status: list[dict], pair: str, timeframe: str = "4h"
+) -> dict:
     columns = raw.get("columns", [])
     g = _row_getter(columns)
 
@@ -74,8 +76,20 @@ def _build_chart_payload(raw: dict, trades: dict, status: list[dict], pair: str)
     if rows:
         last = rows[-1]
         e20, e50 = g(last, "ema20"), g(last, "ema50")
+        open_epoch = _to_epoch(g(last, "date"))
+        tf_seconds = timeframe_to_seconds(timeframe)
+        close_epoch = open_epoch + tf_seconds if open_epoch is not None else None
+        # "date" alani mumun BASLANGIC zamani (OHLCV standardi) — sadece bunu
+        # gostermek "hala guncellenmiyor" izlenimi veriyordu (07:00 gorunce
+        # "ama simdi 11:00" — oysa 07:00-11:00 mumu henuz KAPANMADI). Baslangic
+        # + bitis araligini birlikte gosteriyoruz, bkz. timeutil.timeframe_to_seconds.
         latest = {
             "date": iso_to_local_str(g(last, "date")),
+            "period_start": epoch_to_local_str(open_epoch, "%H:%M"),
+            "period_end": epoch_to_local_str(close_epoch, "%H:%M"),
+            "is_closed": (
+                close_epoch is not None and close_epoch <= datetime.now().timestamp()
+            ),
             "do_predict": g(last, "do_predict", 0),
             "up": g(last, "up"),
             "down": g(last, "down"),
@@ -158,7 +172,7 @@ async def _fetch_chart_data(pair: str) -> tuple[dict, list[str], str, str | None
             client.trades(limit=500),
             client.status(),
         )
-        chart_data = _build_chart_payload(raw, trades, status, pair)
+        chart_data = _build_chart_payload(raw, trades, status, pair, timeframe)
         return chart_data, whitelist, timeframe, None
     except FreqtradeUnavailable as exc:
         logger.warning("chart_data(%s): %s", pair, exc)

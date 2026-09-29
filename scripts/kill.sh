@@ -25,12 +25,16 @@ USER=$(jq -r '.api_server.username' "$CONFIG")
 PASS=$(jq -r '.api_server.password' "$CONFIG")
 BASE="http://${HOST}:${PORT}/api/v1"
 
-echo ">> Bot durduruluyor: ${BASE}"
-curl -sf -u "${USER}:${PASS}" -X POST "${BASE}/stop" && echo " ok: stop"
-
-echo ">> Tum pozisyonlar zorla kapatiliyor (forceexit all)"
+echo ">> Tum pozisyonlar zorla kapatiliyor (forceexit all): ${BASE}"
+# ONEMLI: forceexit, /stop SONRASI cagrilirsa "trader is not running" ile
+# basarisiz olur (Freqtrade acik pozisyonlari kapatmak icin worker loop'un
+# calisiyor olmasini sart kosuyor) -- bu yuzden forceexit HER ZAMAN stop'tan
+# ONCE gelmeli. Sira degistirilmemeli.
 curl -sf -u "${USER}:${PASS}" -X POST "${BASE}/forceexit" \
   -H "Content-Type: application/json" -d '{"tradeid": "all"}' && echo " ok: forceexit all"
+
+echo ">> Bot durduruluyor (yeni giris engellensin)"
+curl -sf -u "${USER}:${PASS}" -X POST "${BASE}/stop" && echo " ok: stop"
 
 echo ">> Durum:"
 curl -sf -u "${USER}:${PASS}" "${BASE}/status" | jq '.[] | {pair, is_open, amount, profit_abs}' || true

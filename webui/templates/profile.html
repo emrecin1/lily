@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Profil — ai-crypto-bot{% endblock %}
+{% block page_title %}Profil{% endblock %}
+{% block content %}
+
+{% if flash %}
+<div class="flash {{ flash.level }}">
+  {{ flash.message }}
+  {% if flash.pending %}
+  <form method="post" action="/settings/apply-now" style="display:inline; margin-left:8px;">
+    <button type="submit" class="btn secondary" style="padding:4px 10px; font-size:12px;">Şimdi uygula</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="settings-card">
+  <h2>Panel şifresi</h2>
+  <p class="desc">Bu, sadece panele giriş şifresidir (Freqtrade'in kendi API şifresiyle ilgisi yoktur). Değiştirince açık olan diğer tüm oturumlar (varsa başka tarayıcı/cihaz) otomatik çıkışa zorlanır; bu sekme açık kalır.</p>
+  <form method="post" action="/profile/password">
+    <div class="field-grid">
+      <div class="field">
+        <label for="current_password">Mevcut şifre</label>
+        <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="new_password">Yeni şifre</label>
+        <input type="password" id="new_password" name="new_password" minlength="8" required autocomplete="new-password">
+        <div class="hint">En az 8 karakter.</div>
+      </div>
+      <div class="field">
+        <label for="new_password2">Yeni şifre (tekrar)</label>
+        <input type="password" id="new_password2" name="new_password2" minlength="8" required autocomplete="new-password">
+      </div>
+    </div>
+    <div class="actions-row">
+      <button type="submit" class="btn">Şifreyi değiştir</button>
+    </div>
+  </form>
+</div>
+
+<div class="settings-card">
+  <h2>Demo (dry-run) bakiyesi</h2>
+  <p class="desc">
+    Şu anki başlangıç bakiyesi: <strong class="mono">{{ dry_run_wallet | num(2) }} USDT</strong>.
+    Bu değer sadece yeni bir <em>başlangıç noktası</em> belirler — bugüne kadarki simüle işlemlerin kâr/zararını silmez
+    (gerçek anlık bakiye = bu değer + o ana kadar gerçekleşen simüle kâr/zarar). Tamamen sıfırdan bir demo hesap
+    (işlem geçmişi dahil silinmiş) istersen bunu panelden değil, botu durdurup elle yapmak gerekir — güvenlik için
+    burada sunulmuyor; istersen bunu ayrıca senin için yapabilirim.
+  </p>
+  <form method="post" action="/profile/demo-wallet">
+    <div class="field-grid">
+      <div class="field">
+        <label for="amount">Yeni başlangıç bakiyesi</label>
+        <div class="input-suffix">
+          <input type="number" id="amount" name="amount" value="{{ dry_run_wallet | round(2) }}" min="10" step="100" required>
+          <span>USDT</span>
+        </div>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button type="submit" class="btn">Kaydet ve uygula</button>
+      <span style="font-size:12px; color:var(--text-faint);">Açık pozisyon yoksa birkaç saniye içinde devreye girer.</span>
+    </div>
+  </form>
+</div>
+
+<div class="settings-card">
+  <h2>Telegram bildirimleri</h2>
+  <p class="desc">
+    Giriş/çıkış/uyarı bildirimleri ve bot kontrolü (ör. <code>/forceexit</code>) için.
+    Token'ı Telegram'da <code>@BotFather</code>'a <code>/newbot</code> yazarak, chat_id'ni ise
+    bota bir mesaj attıktan sonra <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+    adresindeki <code>"chat":{"id": ...}</code> alanından alabilirsin. Token bir kez kaydedildikten
+    sonra tekrar gösterilmez — değiştirmek istemediğin sürece alanı boş bırakabilirsin.
+  </p>
+  <form method="post" action="/profile/telegram">
+    <div class="field-grid">
+      <div class="field">
+        <label for="tg_enabled">
+          <input type="checkbox" id="tg_enabled" name="enabled" value="true" {{ "checked" if telegram.enabled }}>
+          Etkin
+        </label>
+      </div>
+      <div class="field">
+        <label for="tg_token">Bot token</label>
+        <input type="password" id="tg_token" name="token" autocomplete="off"
+               placeholder="{{ '•••• ' + telegram.token_tail if telegram.has_token else '123456789:ABC-DEF...' }}">
+        <div class="hint">{{ "Kayıtlı bir token var — değiştirmek istemiyorsan boş bırak." if telegram.has_token else "@BotFather → /newbot" }}</div>
+      </div>
+      <div class="field">
+        <label for="tg_chat_id">Chat ID</label>
+        <input type="text" id="tg_chat_id" name="chat_id" value="{{ telegram.chat_id }}" inputmode="numeric" placeholder="123456789">
+      </div>
+    </div>
+    <div class="actions-row">
+      <button type="submit" class="btn">Kaydet</button>
+      <span style="font-size:12px; color:var(--text-faint);">Açık pozisyon yoksa birkaç saniye içinde devreye girer.</span>
+    </div>
+  </form>
+</div>
+
+<div class="settings-card">
+  <h2>Oturum</h2>
+  <form method="post" action="/logout">
+    <button type="submit" class="btn secondary">Çıkış yap</button>
+  </form>
+</div>
+
+{% endblock %}

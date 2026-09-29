@@ -72,19 +72,58 @@ class AiCryptoFreqAIStrategy(IStrategy):
     startup_candle_count: int = 400
 
     # P(up) giris esigi. V1 varsayilani 0.70 idi ve hic sinyal uretmiyordu.
-    buy_proba = RealParameter(0.50, 0.75, default=0.65, space="buy", optimize=True)
+    buy_proba = RealParameter(0.50, 0.75, default=0.70, space="buy", optimize=True)
     # Zaman-stop: trade time_stop_candles'tan eski VE kâr < time_stop_loss ise cik.
     time_stop_candles = DecimalParameter(6, 24, default=12, decimals=0,
                                          space="sell", optimize=True)
     time_stop_loss = DecimalParameter(-0.12, -0.02, default=-0.05, decimals=2,
                                       space="sell", optimize=True)
+    # ATR-bazli custom_stoploss denendi (docs/freqai-notes.md): coin basina
+    # 1.5-5.0x carpan taramasinda sabit -%20'yi hicbir carpan gecemedi (en
+    # iyisi 5.0x = +8.05%, baseline +8.55%) -> GERI ALINDI, tekrar denenmeyecek
+    # ayari icin oncelik listesindeki diger maddelere bak.
 
     # Gunluk kayip limiti (V1 RiskManager MAX_DAILY_LOSS ~%1.5). Bugun (UTC)
     # realize kayip baslangic sermayesinin bu oranini asarsa yeni giris yok.
     # Freqtrade "protections" (StoplossGuard/MaxDrawdown) mum bazli; bu
-    # takvim-gunu bazli, stratejiden bagimsiz bir sert kapi. .env / config ile
-    # override edilebilir olsun diye sabit (hyperopt'a acmiyoruz).
-    max_daily_loss_pct: float = 0.02
+    # takvim-gunu bazli, stratejiden bagimsiz bir sert kapi.
+    # config/config.dry.json > aicrypto.max_daily_loss_pct'ten okunur (webui/
+    # /settings sayfasi buraya yazar — tek dogruluk kaynagi, hyperopt'a acilmaz).
+    @property
+    def max_daily_loss_pct(self) -> float:
+        return float(self.config.get("aicrypto", {}).get("max_daily_loss_pct", 0.02))
+
+    # Pozisyon buyuklugu — "bakiyenin %X'i" modu (webui /settings > Pozisyon
+    # buyuklugu > "Bakiyenin yuzdesi"). Freqtrade'in yerli "unlimited" modu
+    # bakiyeyi max_open_trades'e boler (yuzde, sadece o sayiyi degistirerek
+    # ayarlanir — orn. %2 icin 50 es zamanli islem gerekir, pratik degil).
+    # Bu ozellik dogrudan bir % girilmesini saglar; max_open_trades ayrica
+    # es zamanli islem SAYISINI sinirlamaya devam eder (bkz. settings.html).
+    # config/config.dry.json > aicrypto.stake_mode/stake_percent'ten okunur
+    # (yazan: webui/settings_store.py) — tek dogruluk kaynagi.
+    @property
+    def stake_percent(self) -> float | None:
+        aicrypto = self.config.get("aicrypto", {})
+        if aicrypto.get("stake_mode") != "percent":
+            return None
+        return float(aicrypto.get("stake_percent", 0.10))
+
+    def custom_stake_amount(
+        self, pair: str, current_time: datetime, current_rate: float,
+        proposed_stake: float, min_stake: float | None, max_stake: float,
+        leverage: float, entry_tag, side: str, **kwargs
+    ) -> float:
+        pct = self.stake_percent
+        if pct is None:
+            return proposed_stake  # "unlimited"/"fixed" modu: freqtrade'in kendi hesabi gecerli
+        try:
+            balance = float(self.wallets.get_total_stake_amount())
+        except Exception:  # noqa: BLE001
+            return proposed_stake
+        stake = balance * pct
+        if min_stake:
+            stake = max(stake, min_stake)
+        return min(stake, max_stake)
 
     order_types = {
         "entry": "limit",
@@ -110,6 +149,13 @@ class AiCryptoFreqAIStrategy(IStrategy):
                 "trade_limit": 5,
                 "stop_duration_candles": 24,
                 "max_allowed_drawdown": 0.10,
+                # varsayilan "ratios" modu pozisyon buyuklugunu yok sayip
+                # her islemin ham yuzdesini ust uste topluyor -> gercek $
+                # dususunden kat kat buyuk/yaniltici sayilar (bkz.
+                # docs/freqai-notes.md, 18 Eylul: %3.7 gercek dusus %11.46
+                # gosterip kilitledi). "equity" = gercek hesap bakiyesine
+                # gore, pozisyon buyuklugunu hesaba katan dogru dusus.
+                "calculation_mode": "equity",
             },
         ]
 

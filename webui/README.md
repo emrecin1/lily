@@ -1,11 +1,21 @@
 # webui/ — özel panel (FreqUI'nin yerine geçen BFF)
 
 FreqUI jenerik/tema desteği olmayan sabit bir SPA olduğu için, günlük
-kullanılan arayüz olarak yerine bunu koyduk. Freqtrade'in REST/WS API'sine
-(`:8081`) salt-okunur bağlanır; kontrol aksiyonları (start/stop/forceexit)
-bilinçli olarak **yok** — onlar için FreqUI, Telegram veya `scripts/kill.sh`
-kullan. Detaylı tasarım kararları için proje geçmişindeki plan dosyasına ya
-da `docs/ARCHITECTURE.md`'ye bak.
+kullanılan arayüz olarak yerine bunu koyduk (FreqUI'nin kendisi de artık
+sunucuda kurulu değil — `freqtrade install-ui --erase` ile kaldırıldı;
+`:8081` sadece REST API olarak kullanılıyor). Freqtrade'in REST/WS API'sine
+çoğunlukla **salt-okunur** bağlanır; emir gönderme/iptal/force-exit gibi
+trading-kontrol aksiyonları bilinçli olarak **yok** — onlar için Telegram
+veya `scripts/kill.sh` kullan.
+
+Tek istisna: `/settings` ve `/profile` (demo bakiyesi) sayfaları, Freqtrade'in
+**kendi resmi** `POST /reload_config` ucunu çağırır — config/strateji
+dosyalarını diskte güncelledikten sonra botu AYNI SÜREÇTE (PID değişmez,
+açık pozisyonlara dokunmaz) yeniden yükletir. Özel/gayrı-resmi bir kontrol
+ucu değil; freqtrade'in kendi "Bot-control" API'sinin dokümante edilmiş bir
+parçası. Açık pozisyon varsa reload otomatik ERTELENİR (dosyalar yine de
+güncellenir), sayfada "Şimdi uygula" ile elle tetiklenebilir. Detaylar için
+`webui/reload.py` ve `webui/settings_store.py`.
 
 ## Kurulum
 
@@ -55,13 +65,37 @@ Freqtrade zaten çalışıyor olmalı (`:8081`, `api_server.enabled: true`):
   `/system` (bot durumu, FreqAI identifier + son eğitim zamanı — `config/
   config.freqai.json` + `user_data/models/<id>/` dizin mtime'larından,
   CPU/RAM, renkli log görüntüleyici).
-- ⏳ Faz 5 (opsiyonel) — docker-compose'a ikinci servis.
+- ✅ Faz 5 — `/settings` (giriş eşiği, çıkış/zaman-stop/ROI/stop-loss,
+  pozisyon büyüklüğü modu, günlük-kayıp limiti) + `/profile` (panel şifresi
+  değiştirme, demo/dry-run başlangıç bakiyesi). Kaydet -> dosyalar güncellenir
+  -> açık pozisyon yoksa `reload_config` ile bota anında uygulanır.
+- ⏳ Faz 6 (opsiyonel) — docker-compose'a ikinci servis.
 
-**Tüm ana fazlar (1-4) tamam.** Panel FreqUI'nin yerini alacak durumda.
+**Tüm ana fazlar (1-5) tamam.** Panel FreqUI'nin yerini alacak durumda.
 
 ## Bilinen kısıtlar
 
-- Günlük-kayıp pili, `AiCryptoFreqAIStrategy.max_daily_loss_pct`'i
-  `WEBUI_DAILY_LOSS_PCT` env değişkeninde **elle senkron** tutar (Freqtrade'in
-  bunu veren bir endpoint'i yok). Strateji sabiti değişirse burayı da güncelle.
-- Salt-okunur: emir gönderme/iptal/başlatma-durdurma yok.
+- Günlük-kayıp pili artık `config/config.dry.json > aicrypto.max_daily_loss_pct`'i
+  okur — `/settings` sayfası ve `AiCryptoFreqAIStrategy.max_daily_loss_pct`
+  AYNI dosyayı okuduğu için elle senkron tutma ihtiyacı kalmadı (eski
+  `WEBUI_DAILY_LOSS_PCT` env değişkeni artık kullanılmıyor).
+- `/settings` ve `/profile` dışında hâlâ salt-okunur: emir gönderme/iptal/
+  force-exit/start-stop yok.
+- Demo bakiyesini değiştirmek sadece YENİ başlangıç noktasını değiştirir,
+  geçmiş simüle işlemlerin kâr/zararını silmez. Tam sıfırlama (işlem
+  geçmişini de silme) panelden bilinçli olarak sunulmuyor — bot çalışırken
+  aynı SQLite dosyasına aktif bağlantı varken güvenle yapılamaz; gerekirse
+  botu durdurup elle yapılmalı.
+- **Telegram** (`/profile` sayfası): token/chat_id, git'te takip edilmeyen
+  `config/config.telegram.local.json` dosyasına yazılır (`config/*.local.json`
+  kalıbıyla `.gitignore`'da zaten kapsanır — `config.dry.json` git'te takip
+  edildiği için secret oraya YAZILMAZ). Bu dosyanın Freqtrade tarafından
+  okunması için `freqtrade trade` komutuna ayrı bir `-c` katmanı olarak
+  eklenmiş olması gerekir:
+  `-c config/config.dry.json -c config/config.freqai.json -c config/config.telegram.local.json`.
+  Bu katman bir kez eklendikten sonra `/profile`'dan yapılan değişiklikler
+  normal `reload_config` akışıyla (PID değişmeden) uygulanır — AMA botu bu
+  `-c` bayrağı OLMADAN yeniden başlatırsan (ör. eski bir komutu/scripti
+  kullanarak) Telegram config'i sessizce devre dışı kalır. Kalıcı bir
+  başlatma scripti yok; botu yeniden başlatırken bu üçüncü `-c` argümanını
+  unutma.

@@ -12,7 +12,7 @@
 
   --text: #e6e8eb;
   --text-dim: #9aa3ae;
-  --text-faint: #5b6472;
+  --text-faint: #78838f; /* WCAG AA fix: eskisi (#5b6472) ~3.3:1 idi, bu ~5.0:1 */
 
   --accent: #f5a623;
   --accent-soft: rgba(245, 166, 35, 0.14);
@@ -20,7 +20,7 @@
 
   --green: #2ecc71;
   --green-soft: rgba(46, 204, 113, 0.14);
-  --red: #e5484d;
+  --red: #ee6b70; /* WCAG AA fix: eskisi (#e5484d) kendi --red-soft zemininde ~4.1:1 idi, bu ~5.1:1 */
   --red-soft: rgba(229, 72, 77, 0.14);
 
   --font-sans: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
@@ -31,6 +31,22 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Gorsel olarak gizli ama ekran okuyucular icin erisilebilir (placeholder
+   yerine gercek <label> gerektiren alanlarda kullanilir). */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+html {
+  color-scheme: dark; /* native popup'lar (tarih secici vb.) koyu temaya uysun */
+}
 
 html, body {
   margin: 0;
@@ -81,7 +97,6 @@ a { color: inherit; text-decoration: none; }
 .brand .dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
   flex-shrink: 0;
 }
 
@@ -123,7 +138,7 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
-.live-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.live-dot.on { background: var(--green); }
 
 .main {
   flex: 1;
@@ -158,6 +173,10 @@ a { color: inherit; text-decoration: none; }
   margin: 0 auto;
   padding: 24px 28px 60px;
 }
+/* /pairs: sol liste + grafik ikisi birlikte 1180px'te yanlarda bosluk
+   birakiyordu (ozellikle genis ekranlarda "ortali, dar" gorunuyordu) —
+   bu sayfa mevcut genisligi kullansin. */
+.container-wide { max-width: 1600px; }
 
 /* ---- basliklar -------------------------------------------------------- */
 
@@ -236,6 +255,15 @@ a { color: inherit; text-decoration: none; }
 }
 .pos { color: var(--green); }
 .neg { color: var(--red); }
+
+/* ---- ozet: P(up) (sol) + acik islemler (sag) yan yana ---------------------- */
+
+.overview-split {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1.3fr);
+  gap: 20px;
+  align-items: start;
+}
 
 /* ---- islem kartlari -------------------------------------------------------- */
 
@@ -360,7 +388,11 @@ table.data td.num { font-family: var(--font-mono); font-variant-numeric: tabular
   font-size: 14px;
   margin-bottom: 12px;
 }
-.login-card input:focus { outline: none; border-color: var(--accent-border); }
+.login-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
 .login-card button {
   width: 100%;
   padding: 10px 12px;
@@ -379,6 +411,328 @@ table.data td.num { font-family: var(--font-mono); font-variant-numeric: tabular
   margin-bottom: 12px;
 }
 
+/* ---- ayarlar / profil formlari -------------------------------------------------------- */
+
+.settings-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+.settings-card h2 {
+  font-size: 14px;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+.settings-card .desc {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 20px;
+}
+
+.field { display: flex; flex-direction: column; }
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.field .hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+.field input[type="number"],
+.field input[type="text"],
+.field input[type="password"],
+.field input[type="date"] {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field input[type="date"] {
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.field input[type="date"]:hover { border-color: var(--accent-border); }
+/* Tarayicinin varsayilan (koyu zeminde neredeyse gorunmez) takvim ikonunu
+   paletten temalandiriyoruz — bkz. impeccable craft-floor "Browser surfaces". */
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  filter: invert(1);
+  transition: opacity 0.15s ease;
+  border-radius: 3px;
+}
+.field input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 0.95; }
+
+.input-suffix { position: relative; }
+.input-suffix input { padding-right: 34px !important; }
+.input-suffix span {
+  position: absolute;
+  right: 11px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--text-faint); pointer-events: none;
+}
+
+.radio-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.radio-toggle label {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  background: var(--bg);
+}
+.radio-toggle input { display: none; }
+.radio-toggle input:checked + span { color: #1a1204; }
+.radio-toggle label:has(input:checked) { background: var(--accent); }
+.radio-toggle label:has(input:checked) { color: #1a1204; }
+.radio-toggle label + label { border-left: 1px solid var(--border); }
+
+.info-box {
+  background: var(--bg-raised);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 16px;
+}
+.info-box code { font-family: var(--font-mono); color: var(--text); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #1a1204;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.btn.secondary:hover { color: var(--text); border-color: var(--accent-border); }
+.btn.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ---- modal -------------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 8, 0.66);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: auto; }
+.modal-backdrop[hidden] { display: flex; } /* JS acilis/kapanis gecisini animasyonla yonetir */
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 22px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.15s ease;
+}
+.modal-backdrop.open .modal { transform: translateY(0) scale(1); }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  font-family: var(--font-mono);
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px;
+  margin: -6px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.modal-close:hover { color: var(--text); background: var(--card-hover); }
+.modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.modal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.modal-row:last-child { border-bottom: none; }
+.modal-row .k { font-size: 12px; color: var(--text-faint); flex-shrink: 0; }
+.modal-row .v { font-size: 13px; color: var(--text); text-align: right; font-family: var(--font-mono); }
+
+.flash {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+}
+.flash.ok { background: var(--green-soft); color: var(--green); border-color: rgba(46,204,113,0.3); }
+.flash.warn { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-border); }
+
+/* ---- /pairs: sol parite listesi + sag grafik -------------------------------------------------------- */
+
+.pairs-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.pair-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 96px);
+  position: sticky;
+  top: 76px;
+}
+
+.pair-search {
+  margin: 10px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+}
+.pair-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.pair-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 10px;
+  overflow-y: auto;
+}
+.pair-list li { margin: 0; }
+.pair-list a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+}
+.pair-list a:hover { background: var(--card-hover); color: var(--text); }
+.pair-list a.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.coin-icon {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700;
+  color: #0b0d10;
+  font-family: var(--font-mono);
+}
+.coin-symbol { font-family: var(--font-mono); font-size: 12px; }
+
+.pair-main { flex: 1; min-width: 0; }
+
+.pair-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.pair-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.pair-header-tf {
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
 /* ---- responsive -------------------------------------------------------- */
 
 @media (max-width: 800px) {
@@ -394,9 +748,22 @@ table.data td.num { font-family: var(--font-mono); font-variant-numeric: tabular
   }
   .brand { padding: 0 12px 0 0; }
   .sidenav { flex-direction: row; padding: 0; }
-  .sidenav a { border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .sidenav a {
+    border-left: none; border-bottom: 2px solid transparent; white-space: nowrap;
+    padding: 13px 12px; /* dokunma hedefi >= ~44px yukseklik */
+  }
   .sidenav a.active { border-left-color: transparent; border-bottom-color: var(--accent); }
+  .pair-list a { padding: 12px 8px; } /* dokunma hedefi >= ~44px yukseklik */
   .sidebar-footer { margin-top: 0; margin-left: auto; border-top: none; padding: 0 0 0 12px; }
   .header { padding: 0 16px; }
   .container { padding: 16px 16px 40px; }
+
+  .overview-split { grid-template-columns: 1fr; }
+
+  .pairs-layout { flex-direction: column; }
+  .pair-sidebar {
+    width: 100%;
+    max-height: 220px;
+    position: static;
+  }
 }

@@ -1,14 +1,15 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
     "//": "DRY-RUN. Varsayilan calisma modu. Gercek emir GONDERILMEZ. Canli fiyat kullanir.",
-    "max_open_trades": 3,
+    "//2": "fiat_display_currency BILEREK bos -- doluyken Freqtrade her /status,/profit,/balance cagrisinda CoinGecko'ya fiyat cekiyor; CoinGecko rate-limit (429) verince bu cagrilar bloke oluyor, SQLite QueuePool tukeniyor ve bot cokuyor (2026-09-29, testnet'te yasandi). Bos string CryptoToFiatConverter'i tamamen devre disi birakiyor (freqtrade/rpc/rpc.py: `if config.get('fiat_display_currency')`).",
+    "max_open_trades": 5,
     "stake_currency": "USDT",
-    "stake_amount": 1000,
+    "stake_amount": "unlimited",
     "tradable_balance_ratio": 0.99,
-    "fiat_display_currency": "USD",
+    "fiat_display_currency": "",
     "timeframe": "4h",
     "dry_run": true,
-    "dry_run_wallet": 10000,
+    "dry_run_wallet": 10000.0,
     "cancel_open_orders_on_exit": false,
     "trading_mode": "spot",
     "margin_mode": "",
@@ -20,7 +21,7 @@
     },
     "entry_pricing": {
         "price_side": "same",
-        "use_order_book": true,
+        "use_order_book": false,
         "order_book_top": 1,
         "price_last_balance": 0.0,
         "check_depth_of_market": {
@@ -30,7 +31,7 @@
     },
     "exit_pricing": {
         "price_side": "same",
-        "use_order_book": true,
+        "use_order_book": false,
         "order_book_top": 1
     },
     "exchange": {
@@ -39,14 +40,81 @@
         "secret": "",
         "ccxt_config": {},
         "ccxt_async_config": {},
+        "//pair_whitelist": "2026-09-12: VolumePairList (dinamik) FreqAI ile GERCEKTEN CALISMIYOR — FreqAI'nin egitim kuyrugu (_set_train_queue) ve auto-downloader'i pairlist yoneticisinin sonucunu DEGIL, dogrudan bu STATIK config alanini okuyor. VolumePairList kullanirken burasi bos birakilinca (freqtrade'in genel tavsiyesi budur ama FreqAI'ye uygulanmiyor) FreqAI'nin egitim kuyrugu SESSIZCE BOS kaliyor: yeni pariteler ASLA egitilmiyor (hata/uyari YOK, sadece sonsuza dek 'No model ready'). Liste VolumePairList'in secip filtrelerden gecirdigi son listeden STATIK olarak sabitlendi. 2026-09-13: 34'ten 65 pariteye cikarildi — VolumePairList top-80 (hacim sirali) calistirilip su sebeplerle elenenler disarida tutuldu: (a) U/USDT — bilinen veri kalitesi sorunu ('unseen labels: nan'), (b) acik sekilde supheli/bozuk ticker'lar (Cince karakterli '牛来', MARSCOIN, GRAM, SNDKB, NVDAB, SOXLB — son ikisi kaldiraçli hisse-endeksi temali sentetik token, kripto degil). Eklenen 31 yeni paritenin tumu icin ccxt ile ilk mum tarihi kontrol edildi: hepsinde train_period_days(180)+guvenlik payindan fazla (>250 gun) gecmis veri var. Genisletmek/degistirmek icin: /pairs sayfasindan hangi pariteler ilginizi cekiyorsa onlari buraya elle ekleyin.",
         "pair_whitelist": [
             "BTC/USDT",
             "ETH/USDT",
             "SOL/USDT",
-            "BNB/USDT"
+            "BNB/USDT",
+            "ZEC/USDT",
+            "XRP/USDT",
+            "NEAR/USDT",
+            "HOLO/USDT",
+            "SUI/USDT",
+            "DOGE/USDT",
+            "UNI/USDT",
+            "ENA/USDT",
+            "TRX/USDT",
+            "SAHARA/USDT",
+            "ADA/USDT",
+            "LINK/USDT",
+            "PEPE/USDT",
+            "PUMP/USDT",
+            "TAO/USDT",
+            "AVAX/USDT",
+            "RAY/USDT",
+            "ARB/USDT",
+            "WLD/USDT",
+            "DASH/USDT",
+            "WLFI/USDT",
+            "ETHFI/USDT",
+            "ASTER/USDT",
+            "LTC/USDT",
+            "BCH/USDT",
+            "MET/USDT",
+            "PAXG/USDT",
+            "XLM/USDT",
+            "DOT/USDT",
+            "TRUMP/USDT",
+            "LSK/USDT",
+            "THE/USDT",
+            "REZ/USDT",
+            "VTHO/USDT",
+            "STEEM/USDT",
+            "ONDO/USDT",
+            "POWR/USDT",
+            "ILV/USDT",
+            "ARK/USDT",
+            "INJ/USDT",
+            "XPL/USDT",
+            "AAVE/USDT",
+            "MTL/USDT",
+            "PROM/USDT",
+            "SAGA/USDT",
+            "SOPH/USDT",
+            "KAVA/USDT",
+            "MINA/USDT",
+            "PUNDIX/USDT",
+            "AVA/USDT",
+            "HEMI/USDT",
+            "ARPA/USDT",
+            "PENDLE/USDT",
+            "FF/USDT",
+            "FET/USDT",
+            "APT/USDT",
+            "BERA/USDT",
+            "TREE/USDT",
+            "MUBARAK/USDT",
+            "TUT/USDT",
+            "ZRO/USDT"
         ],
-        "pair_blacklist": []
+        "//pair_blacklist": "Ilk denemede USD1/USDT ve RLUSD/USDT (stablecoin-stablecoin, anlamsiz) sizdi — desen enumerasyon yerine 'USD icerir' genel kuralina cevrildi. StaticPairList'te aktif etki etmez (yukaridaki liste zaten elle temizlendi) ama ileride pair_whitelist'e elle ekleme yapilirsa güvenlik agi olarak kalsin.",
+        "pair_blacklist": [
+            "(.*USD.*|EUR|GBP|TRY|AUD|JPY)/.*",
+            ".*(UP|DOWN|BULL|BEAR)/.*"
+        ]
     },
+    "//pairlists": "2026-09-12: once 4 sabitten VolumePairList top-40'a gecildi, SONRA FreqAI uyumsuzlugu (yukaridaki not) nedeniyle StaticPairList'e (ama 35 pariteyle) geri donuldu.",
     "pairlists": [
         {
             "method": "StaticPairList"
@@ -93,5 +161,11 @@
         "heartbeat_interval": 60
     },
     "dataformat_ohlcv": "feather",
-    "db_url": "sqlite:///user_data/tradesv3.dryrun.sqlite"
+    "db_url": "sqlite:///user_data/tradesv3.dryrun.sqlite",
+    "aicrypto": {
+        "//": "webui//settings sayfasinin yazdigi ozel alan. AiCryptoFreqAIStrategy.max_daily_loss_pct BURADAN okur.",
+        "max_daily_loss_pct": 0.02,
+        "stake_mode": "percent",
+        "stake_percent": 0.1
+    }
 }

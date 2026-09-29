@@ -10,9 +10,9 @@ gerekirse tek bir "(yerel saat)" ipucu."""
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-DEFAULT_FMT = "%Y-%m-%d %H:%M"
+DEFAULT_FMT = "%d.%m.%Y %H:%M"
 
 
 def parse_iso(s: str | None) -> datetime | None:
@@ -40,3 +40,31 @@ def epoch_to_local_str(epoch_s: float | None, fmt: str = DEFAULT_FMT) -> str:
     if epoch_s is None:
         return "—"
     return datetime.fromtimestamp(epoch_s).strftime(fmt)
+
+
+def daily_reset_info() -> tuple[str, str]:
+    """Gunluk kayip kapisi (AiCryptoFreqAIStrategy.confirm_trade_entry) UTC
+    takvim-gunune gore calisir, yani UTC gece yarisinda sifirlanir. Donen:
+    (sifirlanma ani - yerel saat "HH:MM", kalan sure - "Xsa Ydk" gibi)."""
+    now_utc = datetime.now(timezone.utc)
+    next_reset_utc = (now_utc + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    remaining = next_reset_utc - now_utc
+    local_str = next_reset_utc.astimezone().strftime("%H:%M")
+    total_minutes = max(int(remaining.total_seconds() // 60), 0)
+    hours, minutes = divmod(total_minutes, 60)
+    remaining_str = f"{hours} sa {minutes} dk" if hours else f"{minutes} dk"
+    return local_str, remaining_str
+
+
+def timeframe_to_seconds(timeframe: str) -> int:
+    """'4h' -> 14400 gibi. Freqtrade'in candle "date" alani mumun
+    BASLANGIC zamanini verir (OHLCV standardi) — kullanicilar bunu "hala
+    guncellenmiyor" saniyor cunku 07:00 gorup "ama simdi 11:00" diyor; oysa
+    07:00-11:00 araligindaki mum henuz KAPANMADI. Bu yuzden /pairs sayfasi
+    baslangic+bitis araligini birlikte gosteriyor (bkz. routes/pairs.py)."""
+    units = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
+    unit = timeframe[-1]
+    amount = int(timeframe[:-1])
+    return amount * units.get(unit, 3600)

@@ -4,6 +4,9 @@
   <span class="pill halt" title="Bugünkü kayıp {{ guard.pct | pct(1) }} limitini aştı — yeni giriş engellendi">
     <span class="dot"></span> DURDURULDU — günlük limit aşıldı
   </span>
+  <div style="font-size:12px; color:var(--text-faint); margin-top:4px;">
+    Yeniden aktif olacak: {{ guard.reset_local }} <span style="color:var(--text-dim);">({{ guard.reset_remaining }} kaldı)</span>
+  </div>
 {% else %}
   <span class="pill ok" title="Bugün: {{ guard.today_pnl | num(2) }} {{ stake_currency }} / limit: {{ guard.limit | num(2) }}">
     <span class="dot"></span> OK — günlük limit içinde

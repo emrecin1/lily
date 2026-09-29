@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Ayarlar — ai-crypto-bot{% endblock %}
+{% block page_title %}Ayarlar{% endblock %}
+{% block content %}
+
+{% if flash %}
+<div class="flash {{ flash.level }}">
+  {{ flash.message }}
+  {% if flash.pending %}
+  <form method="post" action="/settings/apply-now" style="display:inline; margin-left:8px;">
+    <button type="submit" class="btn secondary" style="padding:4px 10px; font-size:12px;">Şimdi uygula</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<form method="post" action="/settings">
+
+  <div class="settings-card">
+    <h2>Giriş (alım) kuralı</h2>
+    <p class="desc">Model her mumda her parite için "yükseliş" (up) veya "düşüş" (down) tahmini üretir; alım sadece model "yükseliş" derse, tahmine olan güven (P) aşağıdaki eşiği geçerse VE kısa vadeli trend (EMA20&gt;EMA50) yukarı yönlüyse yapılır.</p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="buy_proba_pct">P(yükseliş) alım eşiği</label>
+        <div class="input-suffix">
+          <input type="number" id="buy_proba_pct" name="buy_proba_pct" value="{{ (current.buy_proba * 100) | round(1) }}" min="50" max="75" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Yüksek eşik = daha az ama daha "emin" işlem. Düşük eşik = daha sık işlem, daha çok yanlış sinyal. 50–75 arası.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-card">
+    <h2>Çıkış (satım) kuralı</h2>
+    <p class="desc">Ana çıkış nedeni modelin "düşüş" sinyali vermesidir (aşağıdaki eşikler ayrı bir ayar gerektirmez). Buradakiler EK güvenlik bariyerleri: model geç kalırsa devreye girer.</p>
+    <div class="field-grid">
+      <div class="field">
+        <label for="time_stop_candles">Zaman-stop (mum sayısı)</label>
+        <input type="number" id="time_stop_candles" name="time_stop_candles" value="{{ current.time_stop_candles }}" min="6" max="24" step="1" required>
+        <div class="hint">1 mum = 4 saat. Bu kadar süre geçtiği hâlde pozisyon hâlâ zararda ve model "düşüş" demiyorsa yine de kapatılır.</div>
+      </div>
+      <div class="field">
+        <label for="time_stop_loss_pct">Zaman-stop zarar eşiği</label>
+        <div class="input-suffix">
+          <input type="number" id="time_stop_loss_pct" name="time_stop_loss_pct" value="{{ (current.time_stop_loss * -100) | round(1) }}" min="2" max="12" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Zaman-stop yalnızca zarar bu oranı geçtiyse tetiklenir.</div>
+      </div>
+      <div class="field">
+        <label for="roi_pct">Kâr al (ROI) hedefi</label>
+        <div class="input-suffix">
+          <input type="number" id="roi_pct" name="roi_pct" value="{{ (current.roi * 100) | round(1) }}" min="1" max="100" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Bu kâra ulaşan pozisyon anında (model beklenmeden) kapatılır.</div>
+      </div>
+      <div class="field">
+        <label for="stoploss_pct">Sabit stop-loss (felaket bariyeri)</label>
+        <div class="input-suffix">
+          <input type="number" id="stoploss_pct" name="stoploss_pct" value="{{ (current.stoploss * -100) | round(1) }}" min="1" max="90" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Model hiç tepki vermese bile bu zararda pozisyon KESİN kapanır. Son güvenlik ağı — çok düşürmeyin.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-card">
+    <h2>Pozisyon büyüklüğü — her işlemde ne kadar para kullanılsın?</h2>
+    <p class="desc">
+      <strong>"Bakiyenin yüzdesi"</strong> her işlemde, o anki toplam bakiyenin girdiğin % kadarını kullanır — bakiye büyüdükçe/küçüldükçe tutar otomatik ayarlanır, oran hep sabit kalır (istediğin tam yüzdeyi doğrudan girebildiğin tek mod). "Bakiyenin payı" bakiyeyi açık pozisyon sayısına böler (oranı ancak "aynı anda maks. açık işlem" sayısını değiştirerek dolaylı ayarlarsın). "Sabit tutar" her işlemde aynı USDT miktarını kullanır; bakiye değişse de miktar sabit kalır — basit ama tutarsız (bakiye küçülünce oran büyür, riskin artar).
+    </p>
+    <div class="field-grid">
+      <fieldset class="field" style="border:none; padding:0; margin:0;">
+        <legend style="font-size:12px; font-weight:600; color:var(--text-dim); margin-bottom:6px; padding:0;">Mod</legend>
+        <div class="radio-toggle">
+          <label><input type="radio" name="stake_mode" value="percent" onchange="document.getElementById('percent-field').hidden=false;document.getElementById('fixed-amount-field').hidden=true" {{ 'checked' if current.stake_mode == 'percent' }}><span>Bakiyenin yüzdesi</span></label>
+          <label><input type="radio" name="stake_mode" value="unlimited" onchange="document.getElementById('percent-field').hidden=true;document.getElementById('fixed-amount-field').hidden=true" {{ 'checked' if current.stake_mode == 'unlimited' }}><span>Bakiyenin payı</span></label>
+          <label><input type="radio" name="stake_mode" value="fixed" onchange="document.getElementById('percent-field').hidden=true;document.getElementById('fixed-amount-field').hidden=false" {{ 'checked' if current.stake_mode == 'fixed' }}><span>Sabit tutar</span></label>
+        </div>
+      </fieldset>
+      <div class="field" id="percent-field" {{ 'hidden' if current.stake_mode != 'percent' }}>
+        <label for="stake_percent_pct">İşlem başına oran (yalnızca "Bakiyenin yüzdesi" modunda)</label>
+        <div class="input-suffix">
+          <input type="number" id="stake_percent_pct" name="stake_percent_pct" value="{{ (current.stake_percent * 100) | round(2) }}" min="0.5" max="100" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Örn. %2 = her yeni işlemde toplam bakiyenin %2'si kullanılır. Aşağıdaki "aynı anda maks. açık işlem" hâlâ eş zamanlı işlem sayısını sınırlar (toplam maks. maruziyet ≈ bu oran × o sayı).</div>
+      </div>
+      <div class="field">
+        <label for="max_open_trades">Aynı anda maks. açık işlem</label>
+        <input type="number" id="max_open_trades" name="max_open_trades" value="{{ current.max_open_trades }}" min="1" max="10" step="1" required>
+        <div class="hint">"Bakiyenin payı" modunda her işlem ≈ bakiye ÷ bu sayı kadar kullanır. Diğer modlarda yalnızca eş zamanlı işlem sayısını sınırlar.</div>
+      </div>
+      <div class="field">
+        <label for="tradable_balance_ratio_pct">Bakiyenin kaçı kullanılsın</label>
+        <div class="input-suffix">
+          <input type="number" id="tradable_balance_ratio_pct" name="tradable_balance_ratio_pct" value="{{ (current.tradable_balance_ratio * 100) | round(1) }}" min="10" max="100" step="1" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Kalanı işlem ücreti/kayma payı için boşta bırakılır. Örn. %99 = bakiyenin %1'i hep boşta.</div>
+      </div>
+      <div class="field" id="fixed-amount-field" {{ 'hidden' if current.stake_mode != 'fixed' }}>
+        <label for="stake_amount">Sabit tutar (yalnızca "Sabit tutar" modunda)</label>
+        <div class="input-suffix">
+          <input type="number" id="stake_amount" name="stake_amount" value="{{ current.stake_amount | round(2) }}" min="10" step="10">
+          <span>USDT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-card">
+    <h2>Genel sistem ayarları</h2>
+    <div class="field-grid">
+      <div class="field">
+        <label for="max_daily_loss_pct_pct">Günlük maksimum kayıp limiti</label>
+        <div class="input-suffix">
+          <input type="number" id="max_daily_loss_pct_pct" name="max_daily_loss_pct_pct" value="{{ (current.max_daily_loss_pct * 100) | round(2) }}" min="0.5" max="50" step="0.5" required>
+          <span>%</span>
+        </div>
+        <div class="hint">Bugün (UTC) gerçekleşen kayıp başlangıç sermayesinin bu oranını aşarsa, gün bitene kadar yeni işlem açılmaz (açık pozisyonlar etkilenmez). /overview sayfasındaki pil bu değeri gösterir.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      Ek koruma katmanları (kod değişikliği gerektirir, burada değiştirilmez): <code>CooldownPeriod</code> (bir çıkıştan sonra 2 mum bekleme), <code>StoplossGuard</code> (24 mumda 3 stop-loss olursa 12 mum tüm işlemleri durdur), <code>MaxDrawdown</code> (48 mumda %10 düşüş olursa 24 mum durdur).
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button type="submit" class="btn">Kaydet ve uygula</button>
+    <span style="font-size:12px; color:var(--text-faint);">Açık pozisyon yoksa değişiklik birkaç saniye içinde devreye girer (bot aynı süreçte yeniden yüklenir, işlemler etkilenmez).</span>
+  </div>
+
+</form>
+
+{% endblock %}

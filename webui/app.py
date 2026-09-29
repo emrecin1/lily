@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from webui import auth
 from webui.config import BASE_DIR, get_freqtrade_creds, get_settings
 from webui.freqtrade_client import init_client
-from webui.routes import events, overview, pairs, system, trades
+from webui.routes import events, overview, pairs, profile, settings, system, trades
 from webui.state import poll_connectivity
 from webui.ws_bridge import run_ws_bridge
 
@@ -52,13 +52,26 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ai-crypto-bot webui", lifespan=lifespan, docs_url=None, redoc_url=None)
 
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+class NoCacheStaticFiles(StaticFiles):
+    """Gelistirme sirasinda CSS/JS degisikliklerinin hemen gorunmesi icin:
+    tarayici ETag/Last-Modified ile kosullu GET yapar (304), ama diskteki
+    eski kopyayi sunucuya sormadan kullanmaz."""
+
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
+app.mount("/static", NoCacheStaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 app.include_router(auth.router)
 app.include_router(overview.router)
 app.include_router(pairs.router)
 app.include_router(trades.router)
 app.include_router(system.router)
+app.include_router(settings.router)
+app.include_router(profile.router)
 app.include_router(events.router)
 
 

@@ -5,17 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ai-crypto-bot{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/style.css">
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar">
       <div class="brand"><span class="dot"></span> ai-crypto-bot</div>
-      <nav class="sidenav">
-        <a href="/overview" class="{{ 'active' if active == 'overview' }}">Özet</a>
-        <a href="/pairs" class="{{ 'active' if active == 'pairs' }}">Grafik</a>
-        <a href="/trades" class="{{ 'active' if active == 'trades' }}">İşlemler</a>
-        <a href="/system" class="{{ 'active' if active == 'system' }}">Sistem</a>
+      <nav class="sidenav" aria-label="Ana menü">
+        <a href="/overview" class="{{ 'active' if active == 'overview' }}" {{ 'aria-current="page"' | safe if active == 'overview' }}>Özet</a>
+        <a href="/pairs" class="{{ 'active' if active == 'pairs' }}" {{ 'aria-current="page"' | safe if active == 'pairs' }}>Grafik</a>
+        <a href="/trades" class="{{ 'active' if active == 'trades' }}" {{ 'aria-current="page"' | safe if active == 'trades' }}>İşlemler</a>
+        <a href="/system" class="{{ 'active' if active == 'system' }}" {{ 'aria-current="page"' | safe if active == 'system' }}>Sistem</a>
+        <a href="/settings" class="{{ 'active' if active == 'settings' }}" {{ 'aria-current="page"' | safe if active == 'settings' }}>Ayarlar</a>
+        <a href="/profile" class="{{ 'active' if active == 'profile' }}" {{ 'aria-current="page"' | safe if active == 'profile' }}>Profil</a>
       </nav>
       <div class="sidebar-footer">
         <span class="live-dot {{ 'on' if live.ws_connected }}" title="{{ 'Canlı akış bağlı' if live.ws_connected else 'Canlı akış kopuk' }}"></span>
@@ -23,18 +24,19 @@
       </div>
     </aside>
 
-    <div class="main">
+    <main class="main">
       <header class="header">
         <div class="header-title">{% block page_title %}Özet{% endblock %}</div>
       </header>
-      <div class="container">
+      <div class="container {{ 'container-wide' if active in ('pairs', 'trades') }}">
         {% if not live.connected %}
-        <div class="banner">⚠ Freqtrade botuna ulaşılamıyor ({{ live.last_error or 'bağlantı yok' }}). Veriler eski olabilir.</div>
+        <div class="banner" role="alert">⚠ Freqtrade botuna ulaşılamıyor ({{ live.last_error or 'bağlantı yok' }}). Veriler eski olabilir.</div>
         {% endif %}
         {% block content %}{% endblock %}
       </div>
-    </div>
+    </main>
   </div>
   <script src="/static/js/live.js"></script>
+  <script src="/static/js/modal.js"></script>
 </body>
 </html>

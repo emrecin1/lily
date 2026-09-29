@@ -1,73 +1,156 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
-    "//": "MAINNET ornek. SADECE docs/MIGRATION.md Asama 5 tamamlaninca kullan.",
-    "//2": "Kopyala -> config/config.live.json (gitignore, chmod 600). API key: SADECE spot trade, WITHDRAWAL KAPALI, borsada IP allow-list.",
-
-    "max_open_trades": 1,
+    "//": "MAINNET sablonu. SADECE docs/MIGRATION.md Asama 5 (testnet, 1-2 hafta sorunsuz) tamamlaninca kullan.",
+    "//2": "Kopyala -> config/config.live.json (gitignore'da), sonra: chmod 600 config/config.live.json",
+    "//3": "exchange.key/secret: Binance API key -- SADECE Spot Trading yetkisi, WITHDRAWAL KAPALI, IP allow-list (bu makinenin IP'si). Bu uc kisitlama ATLANMAMALI.",
+    "//4": "fiat_display_currency BILEREK bos -- doluyken Freqtrade her /status,/profit,/balance cagrisinda CoinGecko'ya fiyat cekiyor; CoinGecko rate-limit (429) verince bu cagrilar bloke oluyor, SQLite QueuePool tukeniyor ve bot cokuyor (2026-09-29, testnet'te yasandi). Bos string CryptoToFiatConverter'i tamamen devre disi birakiyor (freqtrade/rpc/rpc.py: `if config.get('fiat_display_currency')`).",
+    "max_open_trades": 5,
     "stake_currency": "USDT",
-    "stake_amount": 20,
-    "tradable_balance_ratio": 0.5,
-    "fiat_display_currency": "USD",
+    "stake_amount": "unlimited",
+    "tradable_balance_ratio": 0.99,
+    "fiat_display_currency": "",
     "timeframe": "4h",
-
     "dry_run": false,
     "cancel_open_orders_on_exit": true,
     "trading_mode": "spot",
     "margin_mode": "",
-
-    "minimal_roi": { "0": 0.15 },
-    "stoploss": -0.08,
-
-    "unfilledtimeout": { "entry": 10, "exit": 10, "exit_timeout_count": 0, "unit": "minutes" },
-    "entry_pricing": { "price_side": "same", "use_order_book": true, "order_book_top": 1 },
-    "exit_pricing": { "price_side": "same", "use_order_book": true, "order_book_top": 1 },
-
+    "unfilledtimeout": {
+        "entry": 10,
+        "exit": 10,
+        "exit_timeout_count": 0,
+        "unit": "minutes"
+    },
+    "entry_pricing": {
+        "price_side": "same",
+        "use_order_book": false,
+        "order_book_top": 1,
+        "price_last_balance": 0.0,
+        "check_depth_of_market": {
+            "enabled": false,
+            "bids_to_ask_delta": 1
+        }
+    },
+    "exit_pricing": {
+        "price_side": "same",
+        "use_order_book": false,
+        "order_book_top": 1
+    },
     "exchange": {
         "name": "binance",
         "key": "MAINNET_API_KEY",
         "secret": "MAINNET_API_SECRET",
         "ccxt_config": {},
         "ccxt_async_config": {},
-        "pair_whitelist": [ "BTC/USDT" ],
-        "pair_blacklist": []
+        "//pair_whitelist": "config.dry.json / config.testnet.example.json ile BIREBIR ayni 65 parite -- testnet'te sorunsuz kosan kapsam.",
+        "pair_whitelist": [
+            "BTC/USDT",
+            "ETH/USDT",
+            "SOL/USDT",
+            "BNB/USDT",
+            "ZEC/USDT",
+            "XRP/USDT",
+            "NEAR/USDT",
+            "HOLO/USDT",
+            "SUI/USDT",
+            "DOGE/USDT",
+            "UNI/USDT",
+            "ENA/USDT",
+            "TRX/USDT",
+            "SAHARA/USDT",
+            "ADA/USDT",
+            "LINK/USDT",
+            "PEPE/USDT",
+            "PUMP/USDT",
+            "TAO/USDT",
+            "AVAX/USDT",
+            "RAY/USDT",
+            "ARB/USDT",
+            "WLD/USDT",
+            "DASH/USDT",
+            "WLFI/USDT",
+            "ETHFI/USDT",
+            "ASTER/USDT",
+            "LTC/USDT",
+            "BCH/USDT",
+            "MET/USDT",
+            "PAXG/USDT",
+            "XLM/USDT",
+            "DOT/USDT",
+            "TRUMP/USDT",
+            "LSK/USDT",
+            "THE/USDT",
+            "REZ/USDT",
+            "VTHO/USDT",
+            "STEEM/USDT",
+            "ONDO/USDT",
+            "POWR/USDT",
+            "ILV/USDT",
+            "ARK/USDT",
+            "INJ/USDT",
+            "XPL/USDT",
+            "AAVE/USDT",
+            "MTL/USDT",
+            "PROM/USDT",
+            "SAGA/USDT",
+            "SOPH/USDT",
+            "KAVA/USDT",
+            "MINA/USDT",
+            "PUNDIX/USDT",
+            "AVA/USDT",
+            "HEMI/USDT",
+            "ARPA/USDT",
+            "PENDLE/USDT",
+            "FF/USDT",
+            "FET/USDT",
+            "APT/USDT",
+            "BERA/USDT",
+            "TREE/USDT",
+            "MUBARAK/USDT",
+            "TUT/USDT",
+            "ZRO/USDT"
+        ],
+        "pair_blacklist": [
+            "(.*USD.*|EUR|GBP|TRY|AUD|JPY)/.*",
+            ".*(UP|DOWN|BULL|BEAR)/.*"
+        ]
     },
-
-    "pairlists": [ { "method": "StaticPairList" } ],
-
-    "//protections": "protections strateji sinifinda tanimli. Canlida daha siki degerler icin strategy'yi override et.",
-
-    "telegram": {
-        "enabled": true,
-        "token": "TELEGRAM_BOT_TOKEN",
-        "chat_id": "TELEGRAM_CHAT_ID",
-        "notification_settings": {
-            "status": "on",
-            "entry": "on",
-            "exit": "on",
-            "entry_cancel": "on",
-            "exit_cancel": "on",
-            "protection_trigger": "on",
-            "protection_trigger_global": "on"
+    "pairlists": [
+        {
+            "method": "StaticPairList"
         }
+    ],
+    "//protections": "protections strateji sinifinda tanimli (AiCryptoFreqAIStrategy.protections) -- config'de tekrar edilmez. stoploss/minimal_roi de stratejiden gelir (-%20 / %15) -- burada override EDILMEZ, strateji tek dogruluk kaynagi kalsin.",
+    "telegram": {
+        "enabled": false,
+        "//": "config.telegram.local.json ayri bir -c katmani olarak eklenir (bkz. calistirma komutu), buraya token yazilmaz.",
+        "token": "",
+        "chat_id": ""
     },
-
     "api_server": {
         "enabled": true,
         "listen_ip_address": "127.0.0.1",
         "listen_port": 8081,
         "verbosity": "error",
+        "enable_openapi": false,
         "jwt_secret_key": "DEGISTIR",
         "ws_token": "DEGISTIR",
+        "CORS_origins": [],
         "username": "freqtrader",
         "password": "DEGISTIR"
     },
-
     "bot_name": "ai-crypto-bot-live",
-    "initial_state": "stopped",
+    "initial_state": "running",
     "force_entry_enable": false,
-
-    "internals": { "process_throttle_secs": 5, "heartbeat_interval": 60 },
-
+    "internals": {
+        "process_throttle_secs": 5,
+        "heartbeat_interval": 60
+    },
     "dataformat_ohlcv": "feather",
-    "db_url": "sqlite:///user_data/tradesv3.live.sqlite"
+    "db_url": "sqlite:///user_data/tradesv3.live.sqlite",
+    "aicrypto": {
+        "//": "stake_percent=0.10 + max_open_trades=5 -> 500 USDT baslangicla ayni anda en fazla ~5x50=250 USDT (%50) riske girer, her pozisyon kendi -%20 stop'una tabi.",
+        "max_daily_loss_pct": 0.02,
+        "stake_mode": "percent",
+        "stake_percent": 0.1
+    }
 }

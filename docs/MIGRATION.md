@@ -146,7 +146,16 @@ Aşama 4-5 (risk katmanı, testnet) paralel ilerleyebilir.
       (`/ping` doğrulamalı) ↔ ccxt read-only borsa bakiye/emir. Hayalet
       pozisyon / yetim varlık / açık emir farkı → exit 1 + Telegram. dry_run'da
       atlar. Cron saatlik: `0 * * * * ... reconcile.py --config config/config.<mod>.json`.
-- [x] `scripts/kill.sh`: REST API `/stop` + `/forceexit all` (mevcut).
+- [x] `scripts/kill.sh`: REST API `/forceexit all` + `/stop` (mevcut).
+      **22 Eylül'de dry-run'da test edilirken KRİTİK bir sıra hatası
+      bulundu ve düzeltildi**: eski hali önce `/stop` sonra `/forceexit`
+      çağırıyordu — Freqtrade `/forceexit`'in çalışması için worker loop'un
+      RUNNING olmasını şart koşuyor, yani `/stop` sonrası `/forceexit`
+      `"trader is not running"` (HTTP 502) ile başarısız oluyordu. Gerçek
+      bir acil durumda (açık pozisyon varken) script pozisyonları
+      KAPATAMAYABİLİRDİ. Sıra düzeltildi: forceexit HER ZAMAN stop'tan
+      ÖNCE. Düzeltme sonrası dry-run'da uçtan uca test edildi (HTTP 200,
+      temiz exit code).
 - [x] Telegram: `notification_settings` bloğu config'lerde (entry/exit/stop/
       protection_trigger/warning hepsi "on").
 - [x] Freqtrade API portu **8080 → 8081** (8080'de php çakışması vardı).
@@ -154,7 +163,9 @@ Aşama 4-5 (risk katmanı, testnet) paralel ilerleyebilir.
 - [ ] (Opsiyonel) Prometheus exporter + Grafana panosu.
 
 **Çıkış kriteri:** kill-switch test edildi (dry-run'da tetikle, hepsi kapandı),
-reconcile temiz rapor veriyor, protection'lar backtest'te tetikleniyor.
+reconcile temiz rapor veriyor, protection'lar backtest'te tetikleniyor. ✅
+(22 Eylül: `kill.sh` düzeltilip test edildi, `reconcile.py` dry-run'da
+hatasız çalıştı — "dry_run=true, mutabakat atlanıyor" beklenen davranış.)
 
 ---
 
@@ -164,9 +175,54 @@ Amaç: gerçek OMS yolu — emir gönder/iptal/kısmi dolum/mutabakat — sahte 
 
 - [ ] Binance **spot testnet** hesabı: https://testnet.binance.vision → API key
       (trade yetkisi, withdrawal yok — testnet'te zaten yok).
-- [ ] `config/config.testnet.json` (gitignore'da): `dry_run: false`, testnet
-      key/secret, exchange sandbox modu (kurulu Freqtrade sürümünün dokümanına
-      göre: `exchange.ccxt_config` veya sandbox flag'i — **doğrula**).
+- [x] `config/config.testnet.json` (gitignore'da): `dry_run: false`, testnet
+      key/secret. **22 Eylül'de doğrulandı — Freqtrade'in yerleşik bir
+      "sandbox" anahtarı YOK** (kaynak kodda aranıp doğrulandı, önceki
+      `.example.json`'daki `"sandbox": true` alanı fiilen HİÇBİR ŞEY
+      yapmıyordu, sessizce mainnet'e bağlanıyordu). Doğru/çalışan
+      `exchange.ccxt_config`:
+      ```json
+      "ccxt_config": {
+          "urls": {"api": {
+              "public": "https://testnet.binance.vision/api/v3",
+              "private": "https://testnet.binance.vision/api/v3",
+              "v1": "https://testnet.binance.vision/api/v1"
+          }},
+          "options": {"fetchCurrencies": false, "sandboxMode": true}
+      }
+      ```
+      `options.sandboxMode: true` ŞART — yoksa ccxt'nin binance
+      `fetchMarkets()`'i margin-pair verisi için mainnet-only imzalı bir
+      `sapi` endpoint'ine istek atıp `AuthenticationError: Invalid Api-Key
+      ID` ile çöküyor (testnet key mainnet'te geçersiz olduğu için).
+      `options.fetchCurrencies: false` de aynı sebeple gerekli (ayrı bir
+      imzalı sapi çağrısı, testnet karşılığı yok). `config/config.testnet.example.json` bu ayarlarla güncel.
+      `scripts/reconcile.py` da aynı hatayı veriyordu (kendi ccxt istemcisini
+      `ccxt_config` uygulamadan kuruyordu) — düzeltildi, artık config'teki
+      `exchange.ccxt_config`'i aynen uyguluyor.
+      **25 Eylül düzeltmesi:** 23 Eylül'de ~2-3 dakikalık iki ağ kesintisinde
+      (`fetch_l2_order_book` NetworkError) 5 açık pozisyonun hepsi için
+      "Unable to exit trade" oluştu — kaynağa kadar izlendi:
+      `freqtradebot.handle_trade()` her döngüde ÖNCE `get_rate()` ile fiyat
+      çekiyor (çıkış sinyali VE stop-loss ikisi de bu tek adıma bağlı),
+      `exit_pricing.use_order_book: true` iken bu L2 derinlik verisi
+      gerektiriyor. Ağ kesilince o döngüde stop-loss dahil HİÇBİR çıkış
+      kontrol edilemiyor (retry var, 5sn sonra tekrar dener, zarar olmadı
+      ama teorik risk penceresi gerçek). **Düzeltme**: `entry_pricing` ve
+      `exit_pricing`'te `use_order_book: false` — ticker-bazlı (tek, hafif
+      REST çağrısı) fiyatlamaya geçildi, aynı hassasiyet, daha az ağ
+      bağımlılığı. `config.dry.json`, `config.testnet.json`,
+      `config.testnet.example.json`, `config.live.example.json` hepsi
+      güncellendi; testnet'te canlı doğrulandı (hatasız restart, pozisyonlar
+      korundu).
+
+      **Testnet'e özgü gürültü notu:** `reconcile.py` testnet hesabında
+      onlarca "YETİM VARLIK" raporluyor — bunlar testnet hesabının otomatik
+      geldiği rastgele/anlamsız test-token bakiyeleri (bot bunlarla hiç
+      işlem yapmadı), gerçek bir mutabakat sorunu DEĞİL. Mainnet'te hesap
+      temiz başlayacağı için bu gürültü olmayacak. `reconcile.py`'ın asıl
+      değerli kısmı (hayalet pozisyon tespiti) bot ilk gerçek testnet
+      işlemini yapınca o işleme özel test edilecek.
 - [ ] `! freqtrade trade --config config/config.testnet.json --strategy <strateji>`
 - [ ] Senaryolar:
   - [ ] Normal giriş → çıkış, `trades` tablosu + borsa uyuşuyor

@@ -51,10 +51,13 @@ class Settings:
         )
     )
 
-    # AiCryptoFreqAIStrategy.max_daily_loss_pct ile AYNI TUTULMALI (bkz. o dosya).
-    # Freqtrade'in bunu veren bir endpoint'i yok; panel kendi hesaplar.
-    daily_loss_pct: float = field(
-        default_factory=lambda: float(_env("WEBUI_DAILY_LOSS_PCT", "0.02"))
+    # webui/deploy.py (zip ile kod guncelleme) SADECE ayri canli dizininde
+    # anlamli -- oradaki .env "LIVE_DEPLOY_ENABLED=true" ile acikca ACAR.
+    # Varsayilan false: dev/testnet panelinde bu buton hic gorunmez/calismaz
+    # -- yanlislikla config/config.live.json'a karsi bir freqtrade sureci
+    # baslatilmasini (bkz. scripts/live_ctl.sh) ONLER.
+    live_deploy_enabled: bool = field(
+        default_factory=lambda: _env("LIVE_DEPLOY_ENABLED", "false").lower() == "true"
     )
 
 
@@ -103,6 +106,21 @@ def get_freqtrade_creds() -> FreqtradeCreds:
         password=api.get("password", ""),
         ws_token=api.get("ws_token", ""),
     )
+
+
+def get_max_daily_loss_pct() -> float:
+    """Gunluk-kayip pili icin esik. AiCryptoFreqAIStrategy.max_daily_loss_pct
+    ile AYNI kaynaktan (config.dry.json > aicrypto.max_daily_loss_pct) okunur
+    — /settings sayfasi bu degeri degistirir, strateji de aynisini okur, elle
+    senkron tutma ihtiyaci kalmaz (bkz. webui/settings_store.py). Her cagrida
+    dosyadan tazeler (kucuk dosya, /overview her yenilemede zaten okuyor)."""
+    path = get_settings().freqtrade_config_path
+    try:
+        with open(path) as f:
+            cfg = json.load(f)
+        return float(cfg.get("aicrypto", {}).get("max_daily_loss_pct", 0.02))
+    except (OSError, json.JSONDecodeError):
+        return 0.02
 
 
 def get_freqai_info() -> dict:

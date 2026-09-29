@@ -62,6 +62,9 @@ user_data/logs/
 user_data/backtest_results/
 user_data/hyperopt_results/
 user_data/plot/
+
+# scripts/package_update.py ciktisi -- canli ortama yuklenecek zip paketleri.
+dist/
 user_data/*.sqlite*
 *.sqlite*
 

@@ -1,0 +1,153 @@
+<div class="section-label">Açık Pozisyonlar ({{ open_rows | length }})</div>
+
+{% if not error and open_rows %}
+<div style="overflow-x:auto; margin-bottom:24px;">
+<table class="data">
+  <thead>
+    <tr>
+      <th>Parite</th>
+      <th>Giriş</th>
+      <th class="num">Miktar</th>
+      <th class="num">Giriş Fiyatı</th>
+      <th class="num">Şu Anki Fiyat</th>
+      <th class="num">Yatırılan</th>
+      <th class="num">PnL</th>
+      <th>Giriş Etiketi</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in open_rows %}
+    <tr>
+      <td>{{ t.pair }}</td>
+      <td class="mono">{{ t.open_date }}</td>
+      <td class="num">{{ t.amount | num(6) if t.amount else '—' }}</td>
+      <td class="num">{{ t.open_rate | num(4) if t.open_rate else '—' }}</td>
+      <td class="num">{{ t.current_rate | num(4) if t.current_rate else '—' }}</td>
+      <td class="num">{{ t.stake_amount | num(2) if t.stake_amount else '—' }}</td>
+      <td class="num {{ 'pos' if t.profit_abs and t.profit_abs > 0 else 'neg' if t.profit_abs and t.profit_abs < 0 }}">
+        {% if t.profit_abs is not none %}{{ '+' if t.profit_abs > 0 }}{{ t.profit_abs | num(2) }} {{ t.quote_currency }}{% endif %}
+        {% if t.profit_ratio is not none %}<span style="color:var(--text-faint);">({{ t.profit_ratio | pct }})</span>{% endif %}
+      </td>
+      <td><span class="tag">{{ t.enter_tag }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% elif not error %}
+<div class="empty-state" style="margin-bottom:24px;">Açık pozisyon yok.</div>
+{% endif %}
+
+<div class="section-label">İşlem Geçmişi ({{ total }}) <span style="text-transform:none; font-weight:400; color:var(--text-faint);">— saatler yerel, en yeni en üstte, "Tutulsaydı K/Z" ücret hariç anlık tahmindir</span></div>
+
+<form method="get" action="/trades" style="display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+  <div class="field" style="margin-bottom:0; width:auto;">
+    <label for="date_from">Kapanış — başlangıç</label>
+    <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+  </div>
+  <div class="field" style="margin-bottom:0; width:auto;">
+    <label for="date_to">Kapanış — bitiş</label>
+    <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+  </div>
+  <button type="submit" class="btn secondary" style="padding:9px 16px;">Filtrele</button>
+  {% if date_from or date_to %}<a href="/trades" class="btn secondary" style="padding:9px 16px;">Temizle</a>{% endif %}
+</form>
+
+{% if error %}
+<div class="empty-state">İşlemler alınamadı: {{ error }}</div>
+{% elif not rows %}
+<div class="empty-state">Henüz işlem yok.</div>
+{% else %}
+<div style="overflow-x:auto;">
+<table class="data">
+  <thead>
+    <tr>
+      <th>Parite</th>
+      <th>Giriş</th>
+      <th>Çıkış</th>
+      <th class="num">Miktar</th>
+      <th class="num">Giriş Fiyatı</th>
+      <th class="num">Çıkış Fiyatı</th>
+      <th class="num">Yatırılan</th>
+      <th class="num">PnL</th>
+      <th class="num">Tutulsaydı K/Z</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in rows %}
+    <tr>
+      <td>{{ t.pair }}</td>
+      <td class="mono">{{ t.open_date }}</td>
+      <td class="mono">{{ t.close_date }}</td>
+      <td class="num">{{ t.amount | num(6) if t.amount else '—' }}</td>
+      <td class="num">{{ t.open_rate | num(4) if t.open_rate else '—' }}</td>
+      <td class="num">{{ t.close_rate | num(4) if t.close_rate else '—' }}</td>
+      <td class="num">{{ t.stake_amount | num(2) if t.stake_amount else '—' }}</td>
+      <td class="num {{ 'pos' if t.profit_abs and t.profit_abs > 0 else 'neg' if t.profit_abs and t.profit_abs < 0 }}">
+        {% if t.profit_abs is not none %}{{ '+' if t.profit_abs > 0 }}{{ t.profit_abs | num(2) }} {{ t.quote_currency }}{% endif %}
+        {% if t.profit_ratio is not none %}<span style="color:var(--text-faint);">({{ t.profit_ratio | pct }})</span>{% endif %}
+      </td>
+      <td class="num {{ 'pos' if t.hold_profit_abs and t.hold_profit_abs > 0 else 'neg' if t.hold_profit_abs and t.hold_profit_abs < 0 }}">
+        {% if t.hold_profit_abs is not none %}{{ '+' if t.hold_profit_abs > 0 }}{{ t.hold_profit_abs | num(2) }} {{ t.quote_currency }}{% endif %}
+        {% if t.hold_profit_ratio is not none %}<span style="color:var(--text-faint);">({{ t.hold_profit_ratio | pct }})</span>{% endif %}
+        {% if t.hold_profit_abs is none %}—{% endif %}
+      </td>
+      <td>
+        <button
+          type="button"
+          class="btn secondary btn-sm"
+          data-trade-detail
+          data-pair="{{ t.pair }}"
+          data-open-date="{{ t.open_date }}"
+          data-close-date="{{ t.close_date }}"
+          data-total-after-sale="{{ (t.total_after_sale | num(2)) + ' ' + t.quote_currency if t.total_after_sale is not none else '—' }}"
+          data-enter-tag="{{ t.enter_tag }}"
+          data-exit-reason="{{ t.exit_reason }}"
+          data-exit-reason-class="{{ t.exit_reason_class }}"
+        >Detay</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="modal-backdrop" id="trade-detail-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="trade-detail-title">
+    <div class="modal-header">
+      <h3 id="trade-detail-title">İşlem Detayı</h3>
+      <button type="button" class="modal-close" data-modal-close aria-label="Kapat">✕</button>
+    </div>
+    <div id="trade-detail-body">
+      <div class="modal-row"><span class="k">Satış Sonrası Toplam</span><span class="v" id="td-total"></span></div>
+      <div class="modal-row"><span class="k">Giriş Etiketi</span><span class="v" id="td-enter-tag"></span></div>
+      <div class="modal-row"><span class="k">Çıkış Nedeni</span><span class="v" id="td-exit-reason"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-trade-detail]");
+  if (!btn) return;
+  document.getElementById("trade-detail-title").textContent =
+    btn.dataset.pair + " — " + btn.dataset.openDate + " → " + btn.dataset.closeDate;
+  document.getElementById("td-total").textContent = btn.dataset.totalAfterSale;
+  document.getElementById("td-enter-tag").innerHTML =
+    '<span class="tag">' + btn.dataset.enterTag + '</span>';
+  document.getElementById("td-exit-reason").innerHTML =
+    '<span class="tag exit-' + btn.dataset.exitReasonClass + '">' + btn.dataset.exitReason + '</span>';
+  window.openModal("trade-detail-modal", btn);
+});
+</script>
+
+{% if total_pages > 1 %}
+{% set qs = '&date_from=' + date_from + '&date_to=' + date_to if (date_from or date_to) else '' %}
+<div style="display:flex; gap:8px; margin-top:16px; align-items:center; font-size:13px; color:var(--text-dim);">
+  {% if page > 1 %}<a href="/trades?page={{ page - 1 }}{{ qs }}" class="pill" style="border-color:var(--border); background:var(--card);">‹ Önceki</a>{% endif %}
+  <span>Sayfa {{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}<a href="/trades?page={{ page + 1 }}{{ qs }}" class="pill" style="border-color:var(--border); background:var(--card);">Sonraki ›</a>{% endif %}
+</div>
+{% endif %}
+{% endif %}

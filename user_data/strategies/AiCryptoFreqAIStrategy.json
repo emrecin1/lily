@@ -1,0 +1,19 @@
+{
+    "strategy_name": "AiCryptoFreqAIStrategy",
+    "ft_stratparam_v": 1,
+    "params": {
+        "buy": {
+            "buy_proba": 0.7
+        },
+        "sell": {
+            "time_stop_candles": 12,
+            "time_stop_loss": -0.05
+        },
+        "roi": {
+            "0": 0.15
+        },
+        "stoploss": {
+            "stoploss": -0.2
+        }
+    }
+}

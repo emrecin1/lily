@@ -63,9 +63,14 @@ def _exchange_state(cfg: dict) -> tuple[dict, list[dict]]:
     key = exc_cfg.get("key") or os.getenv("BINANCE_API_KEY") or os.getenv("BINANCE_TESTNET_API_KEY", "")
     secret = exc_cfg.get("secret") or os.getenv("BINANCE_API_SECRET") or os.getenv("BINANCE_TESTNET_API_SECRET", "")
     klass = getattr(ccxt, name)
-    ex = klass({"apiKey": key, "secret": secret, "enableRateLimit": True})
-    if exc_cfg.get("sandbox"):
-        ex.set_sandbox_mode(True)
+    # Freqtrade'in yerlesik bir "sandbox" anahtari YOK (docs/MIGRATION.md Asama 5,
+    # 22 Eylul notu) -- testnet baglantisi tamamen exchange.ccxt_config'teki
+    # url/option override'lariyla calisiyor. Freqtrade'in kendi baglandigi
+    # AYNI ccxt_config'i burada da uygulamazsak reconcile testnet'te
+    # "Invalid Api-Key ID" ile patlar (mainnet'e baglanmaya calisir).
+    ex_config: dict = {"apiKey": key, "secret": secret, "enableRateLimit": True}
+    ex_config.update(exc_cfg.get("ccxt_config", {}))
+    ex = klass(ex_config)
 
     bal = ex.fetch_balance()
     nonzero = {

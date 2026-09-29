@@ -7,6 +7,10 @@
 <div class="empty-state">Bot durumu alınamadı: {{ error }}</div>
 {% endif %}
 
+{% if flash %}
+<div class="flash {{ flash.level }}">{{ flash.message }}</div>
+{% endif %}
+
 <div class="section-label">Bot</div>
 <div class="stat-grid">
   <div class="stat-card">
@@ -59,7 +63,7 @@
   <div class="stat-card">
     <div class="label">Son Eğitim</div>
     <div class="value" style="font-size:15px;">{{ freqai.last_trained_rel }}</div>
-    <div style="font-size:11px; color:var(--text-faint); margin-top:4px;">{{ freqai.last_trained_abs }}</div>
+    <div style="font-size:12px; color:var(--text-faint); margin-top:4px;">{{ freqai.last_trained_abs }}</div>
   </div>
   <div class="stat-card">
     <div class="label">Model Sayısı (walk-forward)</div>
@@ -85,7 +89,7 @@
 
 <div class="section-label">Son Loglar ({{ log_rows | length }}) <span style="text-transform:none; font-weight:400; color:var(--text-faint);">— saatler yerel</span></div>
 {% if log_rows %}
-<div style="max-height:420px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--card);">
+<div style="max-height:420px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--card);">
   <table class="data" style="font-size:12px;">
     <tbody>
       {% for row in log_rows %}
@@ -103,6 +107,55 @@
 </div>
 {% else %}
 <div class="empty-state">Log yok.</div>
+{% endif %}
+
+{% if deploy_enabled %}
+<div class="section-label">Güncelleme <span style="text-transform:none; font-weight:400; color:var(--text-faint);">— sadece ayrı canlı dizininde anlamlıdır</span></div>
+<div class="stat-card" style="margin-bottom:16px;">
+  <div class="label">Şu an çalışan sürüm</div>
+  <div class="value mono" style="font-size:13px; word-break:break-all;">{{ deploy_version }}</div>
+</div>
+
+<form method="post" action="/system/update" enctype="multipart/form-data" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+  <input type="file" name="update_file" accept=".zip" required>
+  <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim);">
+    <input type="checkbox" name="force_with_open_trades" value="true">
+    açık pozisyona rağmen uygula
+  </label>
+  <button type="submit" class="btn secondary" style="padding:9px 16px;">Yükle ve Uygula</button>
+</form>
+
+{% if deploy_history %}
+<div style="overflow-x:auto;">
+<table class="data" style="font-size:12px;">
+  <thead>
+    <tr>
+      <th>Sürüm</th>
+      <th>Tarih</th>
+      <th>Mesaj</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for h in deploy_history %}
+    <tr>
+      <td class="mono">{{ h.hash }}</td>
+      <td class="mono" style="white-space:nowrap; color:var(--text-faint);">{{ h.date }}</td>
+      <td>{{ h.subject }}</td>
+      <td>
+        <form method="post" action="/system/rollback" style="display:inline;">
+          <input type="hidden" name="commit" value="{{ h.hash }}">
+          <button type="submit" class="btn secondary btn-sm">Bu sürüme dön</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">Güncelleme geçmişi yok.</div>
+{% endif %}
 {% endif %}
 
 {% endblock %}

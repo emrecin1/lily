@@ -2,22 +2,28 @@
     "//": "FreqAI overlay. config.dry.json USTUNE bindirilir:",
     "//2": "  freqtrade backtesting -c config/config.dry.json -c config/config.freqai.json --strategy AiCryptoFreqAIStrategy --freqaimodel XGBoostClassifier",
     "//3": "train_period_days/backtest_period_days => backtest'te otomatik walk-forward (haftalik yeniden egitim).",
-
+    "//4": "fit_live_predictions_candles=0: >0 + canli mod -> freqtrade dk.fit_labels() cagirmiyor -> XGBoostClassifier.predict() KeyError('labels_std') (2026-09-12 dry-run cokme dongusu). Strateji labels_mean/std kullanmiyor, guvenli.",
+    "//5": "live_retrain_hours belirtilmezse 0 varsayilir -> check_if_new_training_required() 'elapsed_time > 0' oldugu icin HER dongude yeniden egitim tetikler (saniyede bir!). 4h timeframe ile hizalandi.",
     "freqai": {
         "enabled": true,
         "identifier": "aicrypto-xgb-v1",
         "train_period_days": 180,
         "backtest_period_days": 7,
-        "fit_live_predictions_candles": 300,
+        "live_retrain_hours": 4,
+        "fit_live_predictions_candles": 0,
         "purge_old_models": 2,
         "save_backtest_models": false,
-
         "feature_parameters": {
-            "include_timeframes": ["4h"],
+            "include_timeframes": [
+                "4h"
+            ],
             "include_corr_pairlist": [],
             "label_period_candles": 4,
             "include_shifted_candles": 0,
-            "indicator_periods_candles": [20, 50],
+            "indicator_periods_candles": [
+                20,
+                50
+            ],
             "plot_feature_importances": 0,
             "DI_threshold": 0,
             "weight_factor": 0,
@@ -26,12 +32,10 @@
             "stratify_training_data": 0,
             "buffer_train_data_candles": 0
         },
-
         "data_split_parameters": {
             "test_size": 0.2,
             "shuffle": false
         },
-
         "model_training_parameters": {
             "n_estimators": 300,
             "max_depth": 4,

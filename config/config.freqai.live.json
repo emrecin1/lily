@@ -1,0 +1,7 @@
+{
+    "//": "config.freqai.json UZERINE bindirilen kucuk bir katman -- SADECE canli surec icin. identifier'i testnet'ten ('aicrypto-xgb-v1') ayirir; aksi halde testnet ve canli surecler AYNI ANDA calisirken ayni model klasorune yazip yaris durumuna/bozulmaya sebep olur.",
+    "//2": "Kullanim: -c config/config.live.json -c config/config.freqai.json -c config/config.freqai.live.json (bu sirayla, en sonda override eder).",
+    "freqai": {
+        "identifier": "aicrypto-xgb-v1-live"
+    }
+}

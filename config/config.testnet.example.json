@@ -1,86 +1,171 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
-    "//": "TESTNET ornek. Kopyala -> config/config.testnet.json (gitignore'da), key'leri doldur.",
-    "//2": "Binance spot testnet: https://testnet.binance.vision uzerinden API key olustur (trade yetkisi).",
-
-    "max_open_trades": 2,
+    "//": "TESTNET sablonu. Kopyala -> config/config.testnet.json (gitignore'da), exchange.key/secret'i doldur.",
+    "//2": "Binance spot testnet: https://testnet.binance.vision uzerinden API key olustur (trade yetkisi; testnet'te zaten para cekme yok).",
+    "//3": "config.dry.json ile ayni strateji/risk ayarlarini kullanir (docs/MIGRATION.md Asama 5) -- sadece dry_run=false ve gercek (testnet) exchange baglantisi farkli.",
+    "//4": "fiat_display_currency BILEREK bos -- doluyken Freqtrade her /status,/profit,/balance cagrisinda CoinGecko'ya fiyat cekiyor; CoinGecko rate-limit (429) verince bu cagrilar bloke oluyor, SQLite QueuePool tukeniyor ve bot cokuyor (2026-09-29). Bos string CryptoToFiatConverter'i tamamen devre disi birakiyor (freqtrade/rpc/rpc.py: `if config.get('fiat_display_currency')`).",
+    "max_open_trades": 5,
     "stake_currency": "USDT",
-    "stake_amount": 200,
+    "stake_amount": "unlimited",
     "tradable_balance_ratio": 0.99,
-    "fiat_display_currency": "USD",
+    "fiat_display_currency": "",
     "timeframe": "4h",
-
     "dry_run": false,
     "cancel_open_orders_on_exit": true,
     "trading_mode": "spot",
     "margin_mode": "",
-
     "unfilledtimeout": {
         "entry": 10,
         "exit": 10,
         "exit_timeout_count": 0,
         "unit": "minutes"
     },
-
     "entry_pricing": {
         "price_side": "same",
-        "use_order_book": true,
-        "order_book_top": 1
+        "use_order_book": false,
+        "order_book_top": 1,
+        "price_last_balance": 0.0,
+        "check_depth_of_market": {
+            "enabled": false,
+            "bids_to_ask_delta": 1
+        }
     },
     "exit_pricing": {
         "price_side": "same",
-        "use_order_book": true,
+        "use_order_book": false,
         "order_book_top": 1
     },
-
     "exchange": {
         "name": "binance",
         "key": "TESTNET_API_KEY",
         "secret": "TESTNET_API_SECRET",
         "//": "Testnet'i acmak icin kurulu freqtrade surumunun dokumanina gore ya asagidaki",
-        "//2": "sandbox flag'ini ya da ccxt_config.urls'i kullan. ONCE 'freqtrade' docs 'Sandbox' bolumunu dogrula.",
-        "sandbox": true,
-        "ccxt_config": {},
+        "//2": "Freqtrade'in yerlesik bir 'sandbox' anahtari YOK (kaynak kodda dogrulandi, 22 Eylul) -- ccxt_config ile elle testnet URL'lerine yonlendirmek gerekiyor.",
+        "//3": "options.sandboxMode=true SART: bu olmadan ccxt binance'in fetchMarkets'i margin-pair verisi icin mainnet-only sapi endpoint'ine (imzali) istek atip 'Invalid Api-Key ID' ile patliyor -- sandboxMode bu istegi atlatiyor. options.fetchCurrencies=false de ayni sebeple gerekli (fetchCurrencies da imzali bir sapi cagrisi, testnet'te karsiligi yok).",
+        "ccxt_config": {
+            "urls": {
+                "api": {
+                    "public": "https://testnet.binance.vision/api/v3",
+                    "private": "https://testnet.binance.vision/api/v3",
+                    "v1": "https://testnet.binance.vision/api/v1"
+                }
+            },
+            "options": {
+                "fetchCurrencies": false,
+                "sandboxMode": true
+            }
+        },
         "ccxt_async_config": {},
+        "//pair_whitelist": "config.dry.json ile BIREBIR ayni 65 parite -- dry-run'da zaten dogrulanmis kapsam, testnet'te YENI bir sey denenmiyor.",
         "pair_whitelist": [
             "BTC/USDT",
-            "ETH/USDT"
+            "ETH/USDT",
+            "SOL/USDT",
+            "BNB/USDT",
+            "ZEC/USDT",
+            "XRP/USDT",
+            "NEAR/USDT",
+            "HOLO/USDT",
+            "SUI/USDT",
+            "DOGE/USDT",
+            "UNI/USDT",
+            "ENA/USDT",
+            "TRX/USDT",
+            "SAHARA/USDT",
+            "ADA/USDT",
+            "LINK/USDT",
+            "PEPE/USDT",
+            "PUMP/USDT",
+            "TAO/USDT",
+            "AVAX/USDT",
+            "RAY/USDT",
+            "ARB/USDT",
+            "WLD/USDT",
+            "DASH/USDT",
+            "WLFI/USDT",
+            "ETHFI/USDT",
+            "ASTER/USDT",
+            "LTC/USDT",
+            "BCH/USDT",
+            "MET/USDT",
+            "PAXG/USDT",
+            "XLM/USDT",
+            "DOT/USDT",
+            "TRUMP/USDT",
+            "LSK/USDT",
+            "THE/USDT",
+            "REZ/USDT",
+            "VTHO/USDT",
+            "STEEM/USDT",
+            "ONDO/USDT",
+            "POWR/USDT",
+            "ILV/USDT",
+            "ARK/USDT",
+            "INJ/USDT",
+            "XPL/USDT",
+            "AAVE/USDT",
+            "MTL/USDT",
+            "PROM/USDT",
+            "SAGA/USDT",
+            "SOPH/USDT",
+            "KAVA/USDT",
+            "MINA/USDT",
+            "PUNDIX/USDT",
+            "AVA/USDT",
+            "HEMI/USDT",
+            "ARPA/USDT",
+            "PENDLE/USDT",
+            "FF/USDT",
+            "FET/USDT",
+            "APT/USDT",
+            "BERA/USDT",
+            "TREE/USDT",
+            "MUBARAK/USDT",
+            "TUT/USDT",
+            "ZRO/USDT"
         ],
-        "pair_blacklist": []
+        "pair_blacklist": [
+            "(.*USD.*|EUR|GBP|TRY|AUD|JPY)/.*",
+            ".*(UP|DOWN|BULL|BEAR)/.*"
+        ]
     },
-
     "pairlists": [
-        { "method": "StaticPairList" }
+        {
+            "method": "StaticPairList"
+        }
     ],
-
-    "//protections": "protections strateji sinifinda tanimli (AiCryptoRuleStrategy.protections).",
-
+    "//protections": "protections strateji sinifinda tanimli (AiCryptoFreqAIStrategy.protections) -- config'de tekrar edilmez.",
     "telegram": {
-        "enabled": true,
-        "token": "TELEGRAM_BOT_TOKEN",
-        "chat_id": "TELEGRAM_CHAT_ID"
+        "enabled": false,
+        "//": "config.telegram.local.json ayri bir -c katmani olarak eklenir (bkz. calistirma komutu), buraya token yazilmaz.",
+        "token": "",
+        "chat_id": ""
     },
-
     "api_server": {
         "enabled": true,
         "listen_ip_address": "127.0.0.1",
         "listen_port": 8081,
         "verbosity": "error",
+        "enable_openapi": false,
         "jwt_secret_key": "DEGISTIR",
         "ws_token": "DEGISTIR",
+        "CORS_origins": [],
         "username": "freqtrader",
         "password": "DEGISTIR"
     },
-
     "bot_name": "ai-crypto-bot-testnet",
-    "initial_state": "stopped",
+    "initial_state": "running",
     "force_entry_enable": false,
-
     "internals": {
         "process_throttle_secs": 5,
         "heartbeat_interval": 60
     },
-
     "dataformat_ohlcv": "feather",
-    "db_url": "sqlite:///user_data/tradesv3.testnet.sqlite"
+    "db_url": "sqlite:///user_data/tradesv3.testnet.sqlite",
+    "aicrypto": {
+        "//": "config.dry.json ile ayni -- webui/settings sayfasi bu alani okur/yazar.",
+        "max_daily_loss_pct": 0.02,
+        "stake_mode": "percent",
+        "stake_percent": 0.1
+    }
 }
