@@ -54,12 +54,29 @@ tarafından verilir.
 
 ## Kurulum
 
+Bu depoda iki sistem var: **V1** (`src/`, `main.py` — araştırma/referans CLI
+pipeline'ı, gerçek para ile işlem yapmaz) ve **V2** (`config/`, `user_data/`,
+`webui/` — gerçek zamanlı Freqtrade + FreqAI runtime; dry-run/testnet/live
+olarak çalıştırılan **asıl sistem**). Sadece pipeline'ı incelemek istiyorsan
+V1 yeterli; botu fiilen çalıştırmak için V2 kurulumu gerekir.
+
+### Gereksinimler
+
+- Python 3.12 (bkz. `.python-version`)
+- Docker + Docker Compose (V2'yi container'da çalıştırmak için — önerilen yol)
+  **veya** V2'yi native çalıştırmak için sistem Python'u
+- Node.js 18+ ve npm (yalnızca V1'in React dashboard'u, `frontend/`, için)
+- Binance hesabı — testnet için https://testnet.binance.vision, mainnet için
+  spot-trade-only API key (**withdrawal izni verme**)
+
+### V1 — Araştırma pipeline'ı
+
 ```bash
 # 1. Sanal ortam oluştur ve aktifleştir
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# 2. İkinci bağımlılık kur
+# 2. Bağımlılıkları kur
 pip install -r requirements.txt
 
 # 3. Ortam değişkenlerini kur
@@ -67,6 +84,71 @@ cp .env.example .env
 ```
 
 `.env` dosyasını asla git'e commit etme.
+
+### V2 — Freqtrade + FreqAI runtime (asıl sistem)
+
+Aşama aşama plan ve çıkış kriterleri: [`docs/MIGRATION.md`](docs/MIGRATION.md).
+Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+#### A) Docker ile (önerilen — prod yolu)
+
+```bash
+docker compose run --rm freqtrade download-data --timeframe 4h --timerange 20240101-
+docker compose up -d          # dry-run trade başlat (config.dry.json)
+docker compose logs -f
+docker compose down
+```
+
+Testnet/live'a geçmek için `docker-compose.yml` içindeki `command:`
+bloğundaki `--config` satırını ilgili dosyaya (`config.testnet.json` /
+`config.live.json`) çevir.
+
+#### B) Native — `scripts/testnet_ctl.sh` / `scripts/live_ctl.sh` bunu bekler
+
+```bash
+# 1. Freqtrade için AYRI bir sanal ortam (bağımlılık çakışması olmasın)
+python3 -m venv .venv-rt
+.venv-rt/bin/pip install freqtrade ta python-dotenv
+
+# 2. webui için ana .venv'e "webui" extra'sını kur
+python3 -m venv .venv         # V1 için zaten oluşturduysan atla
+.venv/bin/pip install -e ".[webui]"
+
+# 3. Config dosyalarını örneklerden oluştur ve gerçek değerleri doldur
+cp config/config.testnet.example.json config/config.testnet.json
+cp config/config.live.example.json config/config.live.json
+# config/config.telegram.local.json'ı elle oluştur (Freqtrade "telegram"
+# bloğu: bot token + chat_id) — config/*.local.json her zaman gitignore'da.
+
+# 4. Ortam değişkenlerini kur (DASHBOARD_PASSWORD, DASHBOARD_SESSION_SECRET,
+#    FREQTRADE_CONFIG_PATH dahil — bkz. .env.example)
+cp .env.example .env
+
+# 5. (Opsiyonel ama önerilir) veri indir + backtest
+.venv-rt/bin/freqtrade download-data --config config/config.dry.json --timeframe 4h --timerange 20230101- --prepend
+.venv-rt/bin/freqtrade backtesting --config config/config.dry.json --strategy AiCryptoFreqAIStrategy --freqaimodel XGBoostClassifier --timerange 20240101-20250101 --cache none
+
+# 6. Başlat / durdur / durum
+scripts/testnet_ctl.sh start
+scripts/testnet_ctl.sh status
+scripts/testnet_ctl.sh stop
+
+scripts/live_ctl.sh start       # mainnet — YALNIZCA MIGRATION.md Aşama 5-6 bittikten sonra
+```
+
+Çalışırken:
+- **webui** (özel panel, FreqUI yerine): `http://127.0.0.1:8082` (testnet) /
+  `:8084` (live) — giriş şifresi `.env` → `DASHBOARD_PASSWORD`.
+- **Freqtrade REST API / FreqUI**: `config/config.*.json` →
+  `api_server.listen_port` — `8081` (dry/testnet), `8083` (live). Testnet ve
+  live aynı sunucuda **aynı anda** çalışabilir; portlar bu yüzden ayrı
+  tutulur. Kullanıcı/şifre aynı config dosyasında.
+- **Acil durdurma**: `scripts/kill.sh` — tüm pozisyonları kapatır + botu durdurur.
+- **Mutabakat kontrolü** (saatlik cron önerilir):
+  `.venv-rt/bin/python scripts/reconcile.py --config config/config.testnet.json`
+
+`.env` ve `config/config.{testnet,live,*.local}.json` dosyalarını asla git'e
+commit etme (zaten `.gitignore`'da) — gerçek API key/secret içerirler.
 
 ## Komutlar
 
