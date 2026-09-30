@@ -90,7 +90,21 @@ cp .env.example .env
 Aşama aşama plan ve çıkış kriterleri: [`docs/MIGRATION.md`](docs/MIGRATION.md).
 Mimari: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-#### A) Docker ile (önerilen — prod yolu)
+#### Hızlı kurulum (önerilen)
+
+```bash
+./install.sh
+```
+
+`.venv` + `.venv-rt`'i kurar, `user_data/logs`, `logs/`, `data/*`, `models/`
+dizinlerini oluşturur, `.env` ve `config/config.{testnet,live}.json`'ı
+örneklerden üretip `jwt_secret_key`/`ws_token`/panel şifresi gibi gizli
+değerleri otomatik üretir. Borsa API key/secret'ı **otomatik üretmez**;
+interaktif çalıştırırsan sorar, istersen boş geçip sonra elle doldurursun.
+Script idempotent'tir — zaten var olan `.env`/config dosyalarına dokunmaz,
+tekrar tekrar çalıştırılabilir. Detay akış aşağıda (B — Native) anlatılıyor.
+
+#### A) Docker ile (alternatif)
 
 ```bash
 docker compose run --rm freqtrade download-data --timeframe 4h --timerange 20240101-
