@@ -1,1 +1,1 @@
-# ai-crypto-bot/src package
+# lily/src package

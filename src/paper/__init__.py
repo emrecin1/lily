@@ -1,1 +1,1 @@
-# ai-crypto-bot paper trading module
+# lily paper trading module

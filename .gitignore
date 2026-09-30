@@ -73,3 +73,6 @@ user_data/*.sqlite*
 # Freqtrade runtime lock/artifact
 user_data/hyperopt.lock
 user_data/*.lock
+
+# Yerel araç durumu (repo dışı, geliştirme ortamına özel)
+.impeccable/

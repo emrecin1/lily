@@ -1,5 +1,5 @@
 [project]
-name = "ai-crypto-bot"
+name = "lily"
 version = "2.0.0.dev0"
 description = "ML destekli, risk yönetimi öncelikli Binance spot trading botu (Freqtrade + FreqAI omurga)"
 requires-python = ">=3.12,<3.13"

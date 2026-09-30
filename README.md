@@ -1,4 +1,4 @@
-# AI Crypto Trading Bot (V1)
+# Lily — AI Crypto Trading Bot (V1)
 
 AI destekli, risk yönetimi öncelikli bir **BTC/USDT spot long-only** trading botu.
 

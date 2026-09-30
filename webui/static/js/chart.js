@@ -109,7 +109,7 @@
         container.dataset.url = "/pairs/" + encodeURIComponent(pair) + "/data.json";
         const titleEl = document.getElementById("page-pair-name");
         if (titleEl) titleEl.textContent = pair;
-        document.title = pair + " — ai-crypto-bot";
+        document.title = pair + " — Lily";
         setActiveInList(pair);
         if (!opts.skipHistory) {
           history.pushState({ pair: pair }, "", "/pairs/" + pair);

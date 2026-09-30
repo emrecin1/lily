@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 # NOT: Bu modul bilerek yalnizca numpy/pandas/ta'ya baglidir (src.config /
 # src.logging_config'e DEGIL) — Freqtrade stratejisi add_indicators()'i dogrudan
 # import edip V1 ile birebir ayni feature'lari uretebilsin diye. Bkz. Asama 2.
-logger = logging.getLogger("ai-crypto-bot.features.indicators")
+logger = logging.getLogger("lily.features.indicators")
 
 
 @dataclass(frozen=True)

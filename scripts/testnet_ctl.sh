@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
-# Canli (mainnet) ortamin Freqtrade + webui sureclerini baslat/durdur/yeniden
-# baslat. Bu script'e OZEL: dev/testnet icin bir "profil" secenegi YOK, bu
-# dizinde her zaman config/config.live.json calisir (kasitli dar kapsam,
-# bkz. plan). webui/deploy.py bunu guncelleme sonrasi otomatik cagirir;
-# elle de calistirilabilir.
+# Testnet ortaminin Freqtrade + webui sureclerini baslat/durdur/yeniden
+# baslat. Bu dizinde her zaman config/config.testnet.json calisir (canli
+# icin ayni deseni kullanan scripts/live_ctl.sh'a bakin, ayri dizinde).
 #
-# Kullanim: scripts/live_ctl.sh {start|stop|restart}
+# Kullanim: scripts/testnet_ctl.sh {start|stop|restart|status}
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
-FT_LOG="user_data/logs/freqtrade-live.log"
-WEBUI_LOG="user_data/logs/webui-live.log"
-WEBUI_PORT="${WEBUI_PORT:-8084}"
+FT_LOG="user_data/logs/freqtrade-testnet.log"
+WEBUI_LOG="logs/webui.log"
+WEBUI_PORT="${WEBUI_PORT:-8082}"
 
 FT_CMD=(.venv-rt/bin/freqtrade trade
-  -c config/config.live.json
+  -c config/config.testnet.json
   -c config/config.freqai.json
-  -c config/config.freqai.live.json
   -c config/config.telegram.local.json
   --freqaimodel XGBoostClassifier
   --strategy AiCryptoFreqAIStrategy
@@ -43,48 +40,48 @@ _pids_in_this_dir() {
 
 _stop() {
   local ft_pids webui_pids
-  ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.live.json")
+  ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.testnet.json")
   webui_pids=$(_pids_in_this_dir "uvicorn webui.app:app")
 
   if [ -n "$ft_pids" ]; then
-    echo ">> Freqtrade (canli) durduruluyor: $ft_pids"
+    echo ">> Freqtrade (testnet) durduruluyor: $ft_pids"
     kill $ft_pids
     sleep 2
-    ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.live.json")
+    ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.testnet.json")
     [ -n "$ft_pids" ] && kill -9 $ft_pids || true
   else
-    echo ">> Freqtrade (canli) zaten calismiyor."
+    echo ">> Freqtrade (testnet) zaten calismiyor."
   fi
 
   if [ -n "$webui_pids" ]; then
-    echo ">> webui (canli) durduruluyor: $webui_pids"
+    echo ">> webui durduruluyor: $webui_pids"
     kill $webui_pids
     sleep 1
     webui_pids=$(_pids_in_this_dir "uvicorn webui.app:app")
     [ -n "$webui_pids" ] && kill -9 $webui_pids || true
   else
-    echo ">> webui (canli) zaten calismiyor."
+    echo ">> webui zaten calismiyor."
   fi
 }
 
 _start() {
-  echo ">> Freqtrade (canli) baslatiliyor..."
+  echo ">> Freqtrade (testnet) baslatiliyor..."
   setsid nohup "${FT_CMD[@]}" >>"$FT_LOG" 2>&1 &
   disown
 
-  echo ">> webui (canli) baslatiliyor (port $WEBUI_PORT)..."
+  echo ">> webui baslatiliyor (port $WEBUI_PORT)..."
   setsid nohup "${WEBUI_CMD[@]}" >>"$WEBUI_LOG" 2>&1 &
   disown
 
-  echo ">> Baslatildi. Durum icin: scripts/live_ctl.sh status"
+  echo ">> Baslatildi. Durum icin: scripts/testnet_ctl.sh status"
 }
 
 _status() {
   local ft_pids webui_pids
-  ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.live.json")
+  ft_pids=$(_pids_in_this_dir "freqtrade trade -c config/config.testnet.json")
   webui_pids=$(_pids_in_this_dir "uvicorn webui.app:app")
-  echo "Freqtrade (canli): ${ft_pids:-calismiyor}"
-  echo "webui (canli):     ${webui_pids:-calismiyor}"
+  echo "Freqtrade (testnet): ${ft_pids:-calismiyor}"
+  echo "webui:                ${webui_pids:-calismiyor}"
 }
 
 case "${1:-}" in

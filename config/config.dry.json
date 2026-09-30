@@ -153,7 +153,7 @@
         "username": "freqtrader",
         "password": "Vgr2NMdu26iS8VZP"
     },
-    "bot_name": "ai-crypto-bot-dry",
+    "bot_name": "lily-dry",
     "initial_state": "running",
     "force_entry_enable": false,
     "internals": {

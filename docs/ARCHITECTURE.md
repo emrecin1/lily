@@ -1,4 +1,4 @@
-# Mimari Referans — AI Crypto Bot (Real-time / Otomatik Alım-Satım)
+# Mimari Referans — Lily (Real-time / Otomatik Alım-Satım)
 
 > Durum: **V2 hedef mimarisi.** V1 (elle yazılmış CLI pipeline) `src/` altında
 > duruyor ve _araştırma / referans_ olarak korunuyor. Çalışan runtime, aşama
@@ -142,7 +142,7 @@ versiyonlanır; runtime bunları otomatik yükler ve `train_period_days` +
 ## 4. Repo yapısı (V2)
 
 ```
-ai-crypto-bot/
+lily/
 ├─ pyproject.toml            # gerçek proje tanımı + tooling (ruff, mypy)
 ├─ .python-version           # 3.12
 ├─ docs/

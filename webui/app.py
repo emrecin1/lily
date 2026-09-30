@@ -1,4 +1,4 @@
-"""ai-crypto-bot webui — FreqUI yerine gecen ozel panel. Calistirma:
+"""Lily webui — FreqUI yerine gecen ozel panel. Calistirma:
 uvicorn webui.app:app --host 127.0.0.1 --port 8082
 
 Gereken env (.env): DASHBOARD_PASSWORD, DASHBOARD_SESSION_SECRET.
@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
         await client.aclose()
 
 
-app = FastAPI(title="ai-crypto-bot webui", lifespan=lifespan, docs_url=None, redoc_url=None)
+app = FastAPI(title="Lily webui", lifespan=lifespan, docs_url=None, redoc_url=None)
 
 class NoCacheStaticFiles(StaticFiles):
     """Gelistirme sirasinda CSS/JS degisikliklerinin hemen gorunmesi icin:

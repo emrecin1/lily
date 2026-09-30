@@ -1,1 +1,1 @@
-# ai-crypto-bot strategy module
+# lily strategy module

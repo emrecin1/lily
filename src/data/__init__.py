@@ -1,1 +1,1 @@
-# ai-crypto-bot data module
+# lily data module

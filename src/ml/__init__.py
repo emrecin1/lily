@@ -1,1 +1,1 @@
-# ai-crypto-bot ml module
+# lily ml module

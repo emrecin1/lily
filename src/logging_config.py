@@ -21,7 +21,7 @@ def _build_formatter() -> logging.Formatter:
 
 
 def setup_logging(
-    name: str = "ai-crypto-bot",
+    name: str = "lily",
     level: int = logging.INFO,
     log_dir: Path | None = None,
 ) -> logging.Logger:
@@ -67,4 +67,4 @@ def setup_logging(
 
 def get_logger(name: str) -> logging.Logger:
     """Return a child logger rooted at the configured base logger."""
-    return logging.getLogger(f"ai-crypto-bot.{name}")
+    return logging.getLogger(f"lily.{name}")

@@ -76,7 +76,7 @@ def validate_zip(data: bytes) -> Path:
     if len(data) > MAX_ZIP_BYTES:
         raise DeployError(f"Zip cok buyuk ({len(data)} bayt, sinir {MAX_ZIP_BYTES}).")
 
-    staging_dir = Path(tempfile.mkdtemp(prefix="ai-crypto-bot-update-"))
+    staging_dir = Path(tempfile.mkdtemp(prefix="lily-update-"))
     tmp_zip = staging_dir / "_upload.zip"
     tmp_zip.write_bytes(data)
 

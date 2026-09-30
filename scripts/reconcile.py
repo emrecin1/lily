@@ -4,7 +4,7 @@ Freqtrade'in `trades` tablosu (REST API) ile borsadaki GERCEK bakiye + acik
 emirleri karsilastirir. Fark bulursa exit code 1 + (opsiyonel) Telegram mesaji.
 Cron ile saatlik calistirilir:
 
-    0 * * * *  cd /path/to/ai-crypto-bot && .venv-rt/bin/python scripts/reconcile.py --config config/config.testnet.json
+    0 * * * *  cd /path/to/lily && .venv-rt/bin/python scripts/reconcile.py --config config/config.testnet.json
 
 Read-only calisir: ccxt sadece bakiye/emir OKUR, emir gondermez. API key
 (sadece-okuma yeterli) .env veya config exchange blogundan alinir.

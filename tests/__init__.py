@@ -1,1 +1,1 @@
-# ai-crypto-bot tests
+# lily tests

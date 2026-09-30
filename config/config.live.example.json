@@ -138,7 +138,7 @@
         "username": "freqtrader",
         "password": "DEGISTIR"
     },
-    "bot_name": "ai-crypto-bot-live",
+    "bot_name": "lily-live",
     "initial_state": "running",
     "force_entry_enable": false,
     "internals": {

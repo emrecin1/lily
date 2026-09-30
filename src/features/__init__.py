@@ -1,1 +1,1 @@
-# ai-crypto-bot features module
+# lily features module

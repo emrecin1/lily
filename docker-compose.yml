@@ -13,7 +13,7 @@ services:
     image: freqtradeorg/freqtrade:stable
     # Surumu sabitlemek icin: freqtradeorg/freqtrade:2024.9  (canliya cikmadan pinle)
     restart: unless-stopped
-    container_name: ai-crypto-bot
+    container_name: lily
     volumes:
       - "./user_data:/freqtrade/user_data"
       - "./config:/freqtrade/config:ro"
